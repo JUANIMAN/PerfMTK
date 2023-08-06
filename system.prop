@@ -1,0 +1,32 @@
+# HW
+ro.hardware.egl=
+ro.hardware.vulkan=mali
+ro.opengles.version=196610
+
+# RENDER
+debug.renderengine.backend=skiagl
+
+# SF
+debug.sf.enable_hwc_vds=0
+debug.sf.predict_hwc_composition_strategy=0
+debug.sf.latch_unsignaled=1
+debug.sf.enable_transaction_tracing=false
+
+# GAMES
+debug.mediatek.appgamepq_compress=1
+debug.mediatek.disp_decompress=1
+
+# GPU
+ro.gfx.driver.0=
+
+# DALVIK
+dalvik.vm.heapsize=512m
+dalvik.vm.heapgrowthlimit=256m
+dalvik.vm.heapstartsize=16m
+dalvik.vm.heapmaxfree=8m
+dalvik.vm.heapminfree=4m
+dalvik.vm.heaptargetutilization=0.75
+
+# PerfXT config
+sys.perfmtk.current_mode=eq
+sys.perfmtk.thermal_throttling=enabled
