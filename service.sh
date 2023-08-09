@@ -8,19 +8,22 @@ MODDIR=${0%/*}
 
 # boot complete
 wait_for_boot() {
-	while true; do
-		if [ -n "$(getprop sys.boot_completed)" ]; then
-			break
-		fi
-		sleep 2
-	done
+  while true; do
+    if [ -n "$(getprop sys.boot_completed)" ]; then
+      break
+    fi
+    sleep 2
+  done
 }
 
 # write function
 write() {
-	if [ -f "$1" ]; then
-		echo "$2" > "$1"
-	fi
+  local file_path="$1"
+  shift
+
+  if [ -f "$file_path" ]; then
+    echo "$@" > "$file_path"
+  fi
 }
 
 # scheduler tunables
@@ -54,11 +57,11 @@ write /proc/sys/net/ipv6/conf/all/accept_redirects 0
 
 # set tcp congestion control
 if grep bbr /proc/sys/net/ipv4/tcp_available_congestion_control; then
-	write /proc/sys/net/ipv4/tcp_congestion_control bbr
+  write /proc/sys/net/ipv4/tcp_congestion_control bbr
 elif grep westwood /proc/sys/net/ipv4/tcp_available_congestion_control; then
-	write /proc/sys/net/ipv4/tcp_congestion_control westwood
+  write /proc/sys/net/ipv4/tcp_congestion_control westwood
 else
-	write /proc/sys/net/ipv4/tcp_congestion_control cubic
+  write /proc/sys/net/ipv4/tcp_congestion_control cubic
 fi
 
 # wait for boot
@@ -80,25 +83,25 @@ write /proc/ppm/enabled 1
 
 # Tweak PPM
 DEVICE=$(getprop ro.product.device)
-if [ "$DEVICE" == "begonia" ] || [ "$DEVICE" == "begoniain" ]; then
-	write /proc/ppm/policy_status "3 0"
-	write /proc/ppm/policy_status "4 0"
-	write /proc/ppm/policy_status "5 0"
+if [ "$DEVICE" = begonia ] || [ "$DEVICE" = begoniain ]; then
+  write /proc/ppm/policy_status 3 0
+  write /proc/ppm/policy_status 4 0
+  write /proc/ppm/policy_status 5 0
 else
-	write /proc/ppm/policy_status "2 0"
-	write /proc/ppm/policy_status "3 0"
-	write /proc/ppm/policy_status "4 0"
+  write /proc/ppm/policy_status 2 0
+  write /proc/ppm/policy_status 3 0
+  write /proc/ppm/policy_status 4 0
 fi
 
 # cluster fix
 if [ -d /sys/devices/system/cpu/cpufreq/policy0 ] && [ -d /sys/devices/system/cpu/cpufreq/policy4 ]; then
-	if [ -d /sys/devices/system/cpu/cpufreq/policy7 ]; then
-		write /proc/ppm/policy/ut_fix_core_num "4 3 1"
-	else
-		write /proc/ppm/policy/ut_fix_core_num "4 4"
-	fi
+  if [ -d /sys/devices/system/cpu/cpufreq/policy7 ]; then
+    write /proc/ppm/policy/ut_fix_core_num 4 3 1
+  else
+    write /proc/ppm/policy/ut_fix_core_num 4 4
+  fi
 elif [ -d /sys/devices/system/cpu/cpufreq/policy0 ] && [ -d /sys/devices/system/cpu/cpufreq/policy6 ]; then
-	write /proc/ppm/policy/ut_fix_core_num "6 2"
+  write /proc/ppm/policy/ut_fix_core_num 6 2
 fi
 
 # CPU freq power mode
@@ -127,22 +130,19 @@ write /sys/block/dm-5/queue/read_ahead_kb 128
 # disable fsync
 write /sys/module/sync/parameters/fsync_enabled N
 
-# Tweak simpleperf
-write /proc/sys/kernel/perf_cpu_time_max_percent 20
-
 # setup tweaks
 perf_mode=$(getprop sys.perfmtk.current_mode)
-if [ "$perf_mode" == "ef" ]; then
-	"$MODDIR/system/bin/perfmtk" ef
-elif [ "$perf_mode" == "bl" ]; then
-	"$MODDIR/system/bin/perfmtk" bl
-elif [ "$perf_mode" == "xt" ]; then
-	"$MODDIR/system/bin/perfmtk" xt
+if [ "$perf_mode" = ef ]; then
+  "$MODDIR/system/bin/perfmtk" ef
+elif [ "$perf_mode" = bl ]; then
+  "$MODDIR/system/bin/perfmtk" bl
+elif [ "$perf_mode" = xt ]; then
+  "$MODDIR/system/bin/perfmtk" xt
 fi
 
 perf_thermal=$(getprop sys.perfmtk.thermal_throttling)
-if [ "$perf_thermal" == "enabled" ]; then
-	"$MODDIR/system/bin/perfmtk" "$perf_mode" enable
-elif [ "$perf_thermal" == "disabled" ]; then
-	"$MODDIR/system/bin/perfmtk" "$perf_mode" disable
+if [ "$perf_thermal" = enabled ]; then
+  "$MODDIR/system/bin/perfmtk" "$perf_mode" enable
+elif [ "$perf_thermal" = disabled ]; then
+  "$MODDIR/system/bin/perfmtk" "$perf_mode" disable
 fi

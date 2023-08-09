@@ -1,6 +1,6 @@
 id=perfmtk
 name=PerfMTK
-version=v2.1
-versionCode=21
+version=v2.3
+versionCode=23
 author=@JUANIMAN
-description=Write su -c perfmtk --help in terminal for usage
+description=Type su -c perfmtk --help in terminal for usage

@@ -19,14 +19,6 @@ debug.mediatek.disp_decompress=1
 # GPU
 ro.gfx.driver.0=
 
-# DALVIK
-dalvik.vm.heapsize=512m
-dalvik.vm.heapgrowthlimit=256m
-dalvik.vm.heapstartsize=16m
-dalvik.vm.heapmaxfree=8m
-dalvik.vm.heapminfree=4m
-dalvik.vm.heaptargetutilization=0.75
-
 # PerfXT config
 sys.perfmtk.current_mode=eq
 sys.perfmtk.thermal_throttling=enabled
