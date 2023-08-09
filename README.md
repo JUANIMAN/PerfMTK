@@ -1,5 +1,5 @@
 # PerfMTK
-Modulo magisk para mejorar el rendimiento en teléfonos con chip Mediatek.
+Modulo magisk para mejorar el rendimiento en teléfonos con chip Mediatek con GPU Mali.
 
 ███╗░░░███╗████████╗██╗░░██╗\
 ████╗░████║╚══██╔══╝██║░██╔╝\
