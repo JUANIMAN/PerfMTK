@@ -1,5 +1,3 @@
-#!/system/bin/sh
-
 SKIPUNZIP=1
 
 # Module version
