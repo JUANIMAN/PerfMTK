@@ -1,0 +1,31 @@
+# HW
+ro.hardware.egl=
+ro.hardware.vulkan=mali
+ro.opengles.version=196610
+
+# GPU
+ro.gfx.driver.0=
+
+# RENDER
+debug.renderengine.backend=skiagl
+
+# GAMES
+debug.mediatek.appgamepq_compress=1
+debug.mediatek.disp_decompress=1
+
+# SF
+debug.sf.enable_hwc_vds=0
+debug.sf.predict_hwc_composition_strategy=0
+debug.sf.enable_transaction_tracing=false
+debug.sf.auto_latch_unsignaled=false
+debug.sf.latch_unsignaled=true
+
+# MTK fast charging support
+persist.vendor.mediatek.fast_charging.support=1
+
+# LOW RAM
+ro.config.low_ram=
+
+# PerfXT config
+sys.perfmtk.current_profile=balanced
+sys.perfmtk.thermal_state=enabled
