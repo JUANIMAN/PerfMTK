@@ -12,39 +12,46 @@ BRAND=$(getprop ro.product.brand)
 # SOC
 soc=$(getprop ro.hardware)
 
+# Function to replace a property in the system.prop file
+replace_property() {
+  local property="$1"
+  local value="$2"
+  sed -i "s/$property=/$property=$value/" "$file.bak"
+}
+
 # Function to check meow.cfg existence and set egl property
 set_egl_property() {
-  meow_cfg="/system/vendor/etc/meow.cfg"
-  if [ -f $meow_cfg ]; then
-    sed -i "s/ro.hardware.egl=/ro.hardware.egl=meow/" "$file.bak"
+  if [ -f /system/vendor/etc/meow.cfg ]; then
+    replace_property ro.hardware.egl meow
   else
-    sed -i "s/ro.hardware.egl=/ro.hardware.egl=mali/" "$file.bak"
+    replace_property ro.hardware.egl mali
   fi
 }
 
 # Function to check RAM size and set low_ram property
 set_low_ram_property() {
-  total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-  total_ram_mb=$((total_ram_kb / 1024))
+  local total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+  local total_ram_mb=$((total_ram_kb / 1024))
   if [ $total_ram_mb -lt 3072 ]; then
-    sed -i "s/ro.config.low_ram=/ro.config.low_ram=true/" "$file.bak"
+    replace_property ro.config.low_ram true
   else
-    sed -i "s/ro.config.low_ram=/ro.config.low_ram=false/" "$file.bak"
+    replace_property ro.config.low_ram false
   fi
 }
 
 # Function to set gfx.driver.0 property
 set_gfx_driver_property() {
-  gfxgd=$(getprop ro.gfx.driver.0)
+  local gfxgd=$(getprop ro.gfx.driver.0)
   if [ -z $gfxgd ]; then
     gfxgd="com.mediatek.$soc.gamedriver"
   fi
-  sed -i "s/ro.gfx.driver.0=/ro.gfx.driver.0=$gfxgd/" "$file.bak"
+  replace_property ro.gfx.driver.0 "$gfxgd"
 }
 
 install_module() {
   unzip -o "$ZIPFILE" -x 'META-INF/*' -d $MODPATH >&2
-  file="$MODPATH/system.prop"
+
+  local file="$MODPATH/system.prop"
   cp "$file" "$file.bak"
 
   # Call helper functions

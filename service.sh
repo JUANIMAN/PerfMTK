@@ -1,18 +1,17 @@
 #!/system/bin/sh
-
 MODDIR=${0%/*}
 
 #################
 # Initialization
 #################
 
-# write function
+# Function to write to a file
 write() {
-  local file_path="$1"
+  local file="$1"
   shift
 
-  if [ -f "$file_path" ]; then
-    echo "$@" >"$file_path"
+  if [ -f "$file" ]; then
+    echo "$@" > "$file"
   fi
 }
 
