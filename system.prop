@@ -1,6 +1,4 @@
-# HW
-ro.hardware.egl=
-ro.hardware.vulkan=mali
+# OpenGL ES
 ro.opengles.version=196610
 
 # GPU
@@ -9,19 +7,27 @@ ro.gfx.driver.0=
 # RENDER
 debug.renderengine.backend=skiagl
 
-# GAMES
-debug.mediatek.appgamepq_compress=1
-debug.mediatek.disp_decompress=1
+# Disable backpressure
+debug.sf.disable_backpressure=1
+debug.sf.enable_gl_backpressure=0
 
-# SF
+# Disable HWC
 debug.sf.enable_hwc_vds=0
 debug.sf.predict_hwc_composition_strategy=0
-debug.sf.enable_transaction_tracing=false
-debug.sf.auto_latch_unsignaled=false
+
+# latch unsignaled
 debug.sf.latch_unsignaled=true
+debug.sf.auto_latch_unsignaled=false
+
+# Disable transaction tracing
+debug.sf.enable_transaction_tracing=false
 
 # MTK fast charging support
-persist.vendor.mediatek.fast_charging.support=1
+persist.vendor.mediatek.fast_charging.support=true
+
+# LMK
+sys.lmk.reportkills=0
+persist.sys.lmk.reportkills=false
 
 # LOW RAM
 ro.config.low_ram=

@@ -10,17 +10,8 @@ write() {
   local file="$1"
   shift
 
-  if [ -f "$file" ]; then
-    echo "$@" > "$file"
-  fi
+  [ -f "$file" ] && echo "$@" > "$file"
 }
-
-# scheduler tunables
-write /proc/sys/kernel/sched_tunable_scaling 0
-write /proc/sys/kernel/sched_latency_ns 10000000
-write /proc/sys/kernel/sched_min_granularity_ns 1250000
-write /proc/sys/kernel/sched_wakeup_granularity_ns 2000000
-write /proc/sys/kernel/sched_child_runs_first 0
 
 # Assign reasonable ceiling values for socket rcv/snd buffers.
 write /proc/sys/net/core/rmem_max 262144
@@ -91,9 +82,6 @@ if [ -d /sys/devices/system/cpu/cpufreq/policy0 ] && [ -d /sys/devices/system/cp
 elif [ -d /sys/devices/system/cpu/cpufreq/policy0 ] && [ -d /sys/devices/system/cpu/cpufreq/policy6 ]; then
   write /proc/ppm/policy/ut_fix_core_num 6 2
 fi
-
-# CPU freq power mode
-write /proc/cpufreq/cpufreq_power_mode 3
 
 # fs tune
 write /sys/block/mmcblk0/queue/iostats 0
