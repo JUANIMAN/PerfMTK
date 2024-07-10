@@ -4,3 +4,4 @@ version=v5.5
 versionCode=55
 author=JUANIMAN
 description=Just install the PerfMTK Manager App
+updateJson=https://github.com/JUANIMAN/PerfMTK/raw/main/PerfMTK.json
