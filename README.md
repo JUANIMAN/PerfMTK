@@ -5,9 +5,9 @@ Magisk module to improve overall performance, ONLY for Mediatek (Mali GPU).
 
 **Terminal(Termux)**:
 
-`su -c performance`\
-`su -c balanced`\
-`su -c powersave`\
+`su -c perfmtk performance`\
+`su -c perfmtk balanced`\
+`su -c perfmtk powersave`\
 `su -c thermal_limit enable/disable`
 
 **PerfMTK Manager App**:
