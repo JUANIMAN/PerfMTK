@@ -1,6 +1,6 @@
 {
-  "versionCode": 266,
-  "version": "A.42 (266)",
-  "zipUrl": "https://github.com/JUANIMAN/PerfMTK/releases/download/v5.5/PerfMTKv5.5.zip",
-  "changelog": "https://github.com/JUANIMAN/PerfMTK/raw/main/changelog.md"
+    "version": v5.5,
+    "versionCode": 55,
+    "zipUrl": https://github.com/JUANIMAN/PerfMTK/releases/download/v5.5/PerfMTKv5.5.zip,
+    "changelog": https://github.com/JUANIMAN/PerfMTK/raw/main/changelog.md
 }
