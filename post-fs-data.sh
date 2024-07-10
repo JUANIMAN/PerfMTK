@@ -31,11 +31,11 @@ else
   write /dev/cpuset/ui/cpus 4-7
 fi
 
+# Disable compaction proactiveness
+write /proc/sys/vm/compaction_proactiveness 0
+
 # Disable watermark boost
 write /proc/sys/vm/watermark_boost_factor 0
-
-# Disable compaction_proactiveness
-write /proc/sys/vm/compaction_proactiveness 0
 
 # multi-gen LRU
 write /sys/kernel/mm/lru_gen/enabled y

@@ -24,9 +24,8 @@ replace_property() {
 set_low_ram_property() {
   local total_ram_kb
   local total_ram_mb
-
   total_ram_kb="$(grep MemTotal /proc/meminfo | awk '{print $2}')"
-  total_ram_mb="$(( total_ram_kb / 1024 ))"
+  total_ram_mb="$((total_ram_kb / 1024))"
 
   if [ $total_ram_mb -lt 3072 ]; then
     replace_property ro.config.low_ram true
@@ -61,12 +60,12 @@ print_banner() {
   ui_print "          $MODNAME $MODVER      "
   ui_print "********************************"
   ui_print "                            "
-  ui_print "███╗░░░███╗████████╗██╗░░██╗"
-  ui_print "████╗░████║╚══██╔══╝██║░██╔╝"
-  ui_print "██╔████╔██║░░░██║░░░█████═╝░"
-  ui_print "██║╚██╔╝██║░░░██║░░░██╔═██╗░"
-  ui_print "██║░╚═╝░██║░░░██║░░░██║░╚██╗"
-  ui_print "╚═╝░░░░░╚═╝░░░╚═╝░░░╚═╝░░╚═╝"
+  ui_print " ███╗░░░███╗████████╗██╗░░██╗"
+  ui_print " ████╗░████║╚══██╔══╝██║░██╔╝"
+  ui_print " ██╔████╔██║░░░██║░░░█████═╝░"
+  ui_print " ██║╚██╔╝██║░░░██║░░░██╔═██╗░"
+  ui_print " ██║░╚═╝░██║░░░██║░░░██║░╚██╗"
+  ui_print " ╚═╝░░░░░╚═╝░░░╚═╝░░░╚═╝░░╚═╝"
   ui_print " "
 }
 
