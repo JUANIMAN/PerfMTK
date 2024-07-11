@@ -2,15 +2,6 @@
 
 A Magisk module for MediaTek devices with Mali GPUs.
 
-```
-███╗░░░███╗████████╗██╗░░██╗
-████╗░████║╚══██╔══╝██║░██╔╝
-██╔████╔██║░░░██║░░░█████═╝░
-██║╚██╔╝██║░░░██║░░░██╔═██╗░
-██║░╚═╝░██║░░░██║░░░██║░╚██╗
-╚═╝░░░░░╚═╝░░░╚═╝░░░╚═╝░░╚═╝
-```
-
 ## Overview
 
 PerfMTK is a powerful Magisk module designed to optimize performance and power efficiency on MediaTek devices. It offers granular control over various system aspects, allowing users to fine-tune their device's performance according to their needs.
@@ -56,11 +47,11 @@ su -c thermal_limit disable
 
 ### Via PerfMTK Manager App
 
-1. Open the PerfMTK Manager app.
+1. Open the [PerfMTK Manager app](https://github.com/JUANIMAN/PerfMTK-Manager).
 2. Simply select the desired performance profile.
 3. Optionally, thermal limitations on/off.
 
-Download: [PerfMTK-Manager](https://github.com/JUANIMAN/PerfMTK-Manager)
+Download: [Here](https://github.com/JUANIMAN/PerfMTK-Manager/releases/latest)
 
 ## Compatibility
 
@@ -86,4 +77,4 @@ This project is licensed under the [GPLv3](LICENSE).
 
 ## Disclaimer
 
-Use this module at your own risk. While we strive for stability and performance, modifying system parameters can potentially cause issues. Always keep a backup of your important data.
+Use this module at your own risk. While I strive for stability and performance, I cannot test all devices, so please report any bugs.
