@@ -41,7 +41,7 @@ set_gfx_driver_property() {
 }
 
 install_module() {
-  unzip -o "$ZIPFILE" -x 'META-INF/*' 'LICENCE' -d $MODPATH >&2
+  unzip -o "$ZIPFILE" -x 'META-INF/*' 'LICENSE' -d $MODPATH >&2
 
   local prop_file="$MODPATH/system.prop"
   cp "$prop_file" "$prop_file.bak"
