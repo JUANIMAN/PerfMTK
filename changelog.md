@@ -1,5 +1,6 @@
-## Changelog
+# Changelog
 
-- Removed network settings.
-- Fixed an issue that caused profiles not to be applied after a reboot.
-- Performance profile improvements.
+- improved module installation script.
+- The maximum frequency of the third cluster was updated to a lower one in **powersave** mode.
+- Added core controller management.
+- fix update.
