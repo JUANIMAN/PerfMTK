@@ -40,7 +40,7 @@ set_gfx_driver_property() {
   replace_property ro.gfx.driver.0 "$gfxgd" "$file"
 }
 
-install_module() {
+install_perfmtk() {
   unzip -o "$ZIPFILE" -x 'META-INF/*' 'LICENSE' -d $MODPATH >&2
 
   local prop_file="$MODPATH/system.prop"
@@ -99,4 +99,4 @@ else
   ui_print " "
 fi
 
-install_module
+install_perfmtk
