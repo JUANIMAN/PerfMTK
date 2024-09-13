@@ -2,9 +2,11 @@
 
 A Magisk module for MediaTek devices with Mali GPUs.
 
+![GitHub all releases](https://img.shields.io/github/downloads/JUANIMAN/PerfMTK/total)
+
 ## Overview
 
-PerfMTK is a powerful Magisk module designed to optimize performance and power efficiency on MediaTek devices. It offers granular control over various system aspects, allowing users to fine-tune their device's performance according to their needs.
+PerfMTK is a powerful Magisk module designed to optimize performance and power efficiency on MediaTek devices. It offers granular control over various system aspects.
 
 ## Features
 
