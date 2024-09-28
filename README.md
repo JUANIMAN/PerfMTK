@@ -67,7 +67,7 @@ If you encounter any issues:
 1. Ensure you're using the latest version of PerfMTK.
 2. Check if your device is supported.
 3. Try rebooting your device after making changes.
-4. If problems persist, please report the issue on our GitHub page with detailed information about your device and the problem you're experiencing.
+4. If problems persist, please report the issue in the GitHub issues section with detailed information about your device and the problem you're experiencing.
 
 ## Contributing
 
