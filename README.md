@@ -59,6 +59,7 @@ Download: [Here](https://github.com/JUANIMAN/PerfMTK-Manager/releases/latest)
 
 - PerfMTK is designed for MediaTek devices with Mali GPUs.
 - It's compatible with various Android versions (9 or higher).
+- Do not use on devices with kernel versions lower than 4.14.x
 - Recommended to use magisk 27 or higher
 
 ## Troubleshooting
