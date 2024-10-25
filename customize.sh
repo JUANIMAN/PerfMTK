@@ -1,59 +1,139 @@
 SKIPUNZIP=1
 
-# Module version
-MODVER=$(grep_prop version $TMPDIR/module.prop)
+# Module information
+MODVER=$(grep_prop version "$TMPDIR/module.prop")
+MODAUTH=$(grep_prop author "$TMPDIR/module.prop")
 
 # System information
-SYSLANG=$(getprop persist.sys.locale)
 BRAND=$(getprop ro.product.brand)
 SOC=$(getprop ro.hardware)
+SYSLANG=$(getprop persist.sys.locale)
 
-# RAM
+# RAM information
 total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 total_ram_mb=$((total_ram_kb / 1024))
 
-# Function to replace a property in the system.prop file
+# Logging function
+log_info() {
+  if [[ $SYSLANG == es* ]]; then
+    ui_print "- $1"
+    ui_print " "
+  else
+    ui_print "- $2"
+    ui_print " "
+  fi
+}
+
+# Error handling function
+abort_install() {
+  if [[ $SYSLANG == es* ]]; then
+    abort "× $1"
+  else
+    abort "× $2"
+  fi
+}
+
+# Function to verify system requirements
+verify_requirements() {
+  # Verify installation environment
+  if ! $BOOTMODE; then
+    abort_install \
+      "Instalación desde Recovery no soportada" \
+      "Installation from Recovery is not supported"
+  fi
+
+  # Verify SOC compatibility
+  if [[ $SOC != mt* ]]; then
+    abort_install \
+      "[$SOC] no es compatible" \
+      "[$SOC] is not supported"
+  fi
+
+  # Verify architecture
+  if [[ $ARCH != arm* ]]; then
+    abort_install \
+      "Arquitectura [$ARCH] no soportada" \
+      "Architecture [$ARCH] not supported"
+  fi
+}
+
+# Function to replace a property in system.prop
 replace_property() {
   local property="$1"
   local value="$2"
   local file="$3"
 
-  sed -i "s/$property=.*/$property=$value/" "$file"
-}
+  if [ ! -f "$file" ]; then
+    abort_install \
+      "Archivo $file no encontrado" \
+      "File $file not found"
+  fi
 
-# Function to check RAM size and set low_ram property
-set_low_ram_property() {
-  local file="$1"
-
-  if [ $total_ram_mb -lt 3072 ]; then
-    replace_property ro.config.low_ram true "$file"
-  else
-    replace_property ro.config.low_ram false "$file"
+  if ! sed -i "s/$property=.*/$property=$value/g" "$file"; then
+    abort_install \
+      "Error al modificar $property en $file" \
+      "Error modifying $property in $file"
   fi
 }
 
-# Function to set gfx.driver.0 property
-set_gfx_driver_property() {
-  local file="$1"
-  local gfxgd="com.mediatek.$SOC.gamedriver"
+# Configure system properties based on device specs
+configure_system_props() {
+  local prop_file="$1"
 
-  replace_property ro.gfx.driver.0 "$gfxgd" "$file"
+  # Set low RAM property
+  if [ $total_ram_mb -lt 3072 ]; then
+    replace_property "ro.config.low_ram" "true" "$prop_file"
+  else
+    replace_property "ro.config.low_ram" "false" "$prop_file"
+  fi
+
+  # Set graphics driver
+  local gfx_driver="com.mediatek.$SOC.gamedriver"
+  replace_property "ro.gfx.driver.0" "$gfx_driver" "$prop_file"
+
+  # Set default config
+  local current_profile=$(getprop sys.perfmtk.current_profile)
+  local current_thermal=$(getprop sys.perfmtk.thermal_state)
+
+  [ -z "$current_profile" ] && current_profile="balanced"
+  [ -z "$current_thermal" ] && current_thermal="enabled"
+
+  replace_property "sys.perfmtk.current_profile" "$current_profile" "$prop_file"
+  replace_property "sys.perfmtk.thermal_state" "$current_thermal" "$prop_file"
 }
 
-install_perfmtk() {
-  unzip -o "$ZIPFILE" -x 'META-INF/*' 'LICENSE' -d $MODPATH >&2
+# Install module files
+install_module() {
+  log_info \
+    "Extrayendo archivos del módulo..." \
+    "Extracting module files..."
+
+  if ! unzip -o "$ZIPFILE" -x 'META-INF/*' 'LICENSE' -d "$MODPATH" >&2; then
+    abort_install \
+      "Error al extraer los archivos" \
+      "Error extracting files"
+  fi
+
+  sleep 0.4
 
   local prop_file="$MODPATH/system.prop"
   cp "$prop_file" "$prop_file.bak"
 
-  set_low_ram_property "$prop_file.bak"
-  set_gfx_driver_property "$prop_file.bak"
+  log_info \
+    "Configurando propiedades del sistema..." \
+    "Configuring system properties..."
 
+  configure_system_props "$prop_file.bak"
   mv "$prop_file.bak" "$prop_file"
-  set_perm_recursive $MODPATH 0 0 0755 0644
-  set_perm_recursive $MODPATH/system/bin 0 2000 0755 0755
+
+  sleep 0.2
+
+  # Set permissions
+  set_perm_recursive "$MODPATH" 0 0 0755 0644
+  set_perm_recursive "$MODPATH/system/bin" 0 2000 0755 0755
 }
 
+# Print module banner
 print_banner() {
   ui_print "********************************"
   ui_print "          $MODNAME $MODVER      "
@@ -68,35 +148,29 @@ print_banner() {
   ui_print " "
 }
 
-if ! $BOOTMODE; then
-  abort "! Install from Recovery is not supported"
-fi
+# Main installation function
+main() {
+  print_banner
+  verify_requirements
+  sleep 1
 
-if [[ $SOC != mt* ]]; then
-  if [[ $SYSLANG == es* ]]; then
-    abort "× [ $SOC ] no soportado"
-  else
-    abort "× [ $SOC ] not supported"
-  fi
-fi
+  log_info \
+    "Por $MODAUTH" \
+    "By $MODAUTH"
 
-print_banner
-sleep 1
+  log_info \
+    "Desbloquea todo el potencial de tu $(toupper $BRAND)" \
+    "Unlock the full potential of your $(toupper $BRAND)"
 
-if [[ $SYSLANG == es* ]]; then
-  ui_print "- Por $MODAUTH"
-  ui_print " "
-  ui_print "- Desbloquea todo el potencial de tu $(toupper $BRAND)"
-  ui_print " "
-  ui_print "- Extrayendo archivos del módulo"
-  ui_print " "
-else
-  ui_print "- By $MODAUTH"
-  ui_print " "
-  ui_print "- Unlock the full potential of your $(toupper $BRAND)"
-  ui_print " "
-  ui_print "- Extracting module files"
-  ui_print " "
-fi
+  sleep 0.2
 
-install_perfmtk
+  install_module
+
+  log_info \
+    "¡Instalación completada!" \
+    "Installation completed!"
+  
+  sleep 0.1
+}
+
+main
