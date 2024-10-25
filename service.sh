@@ -77,5 +77,5 @@ write /sys/block/dm-5/queue/read_ahead_kb 128
 current_profile=$(getprop sys.perfmtk.current_profile)
 "$MODDIR/system/bin/perfmtk" "$current_profile"
 
-thermal_state=$(getprop sys.perfmtk.thermal_throttling)
-"$MODDIR/system/bin/thermal_limit" "$thermal_state"
+thermal_state=$(getprop sys.perfmtk.thermal_state)
+"$MODDIR/system/bin/thermal_limit" "${thermal_state%?}"
