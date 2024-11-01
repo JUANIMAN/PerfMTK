@@ -1,7 +1,7 @@
 id=perfmtk
 name=PerfMTK
-version=v6.1
-versionCode=61
+version=v6.9
+versionCode=69
 author=JUANIMAN
 description=Just install the PerfMTK Manager App
 updateJson=https://github.com/JUANIMAN/PerfMTK/raw/main/update.json
