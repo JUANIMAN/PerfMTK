@@ -13,6 +13,13 @@ SYSLANG=$(getprop persist.sys.locale)
 total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
 total_ram_mb=$((total_ram_kb / 1024))
 
+# GFX driver
+gfx_driver="com.mediatek.$SOC.gamedriver"
+
+# Current settings
+current_profile=$(getprop sys.perfmtk.current_profile)
+current_thermal=$(getprop sys.perfmtk.thermal_state)
+
 # Logging function
 log_info() {
   if [[ $SYSLANG == es* ]]; then
@@ -88,13 +95,9 @@ configure_system_props() {
   fi
 
   # Set graphics driver
-  local gfx_driver="com.mediatek.$SOC.gamedriver"
   replace_property "ro.gfx.driver.0" "$gfx_driver" "$prop_file"
 
   # Set default config
-  local current_profile=$(getprop sys.perfmtk.current_profile)
-  local current_thermal=$(getprop sys.perfmtk.thermal_state)
-
   [ -z "$current_profile" ] && current_profile="balanced"
   [ -z "$current_thermal" ] && current_thermal="enabled"
 
@@ -148,29 +151,24 @@ print_banner() {
   ui_print " "
 }
 
-# Main installation function
-main() {
-  print_banner
-  verify_requirements
-  sleep 1
+print_banner
+verify_requirements
+sleep 1
 
-  log_info \
-    "Por $MODAUTH" \
-    "By $MODAUTH"
+log_info \
+  "Por $MODAUTH" \
+  "By $MODAUTH"
 
-  log_info \
-    "Desbloquea todo el potencial de tu $(toupper $BRAND)" \
-    "Unlock the full potential of your $(toupper $BRAND)"
+log_info \
+  "Desbloquea todo el potencial de tu $(toupper $BRAND)" \
+  "Unlock the full potential of your $(toupper $BRAND)"
 
-  sleep 0.2
+sleep 0.2
 
-  install_module
+install_module
 
-  log_info \
-    "¡Instalación completada!" \
-    "Installation completed!"
-  
-  sleep 0.1
-}
+log_info \
+  "¡Instalación completada!" \
+  "Installation completed!"
 
-main
+sleep 0.1
