@@ -34,7 +34,9 @@ PerfMTK is a powerful Magisk module designed to optimize performance and power e
 
 ### Via Terminal (e.g., Termux)
 
-To change performance profiles:
+Just type `su -c perfmtk` for menu
+
+Or change performance profiles manually:
 ```
 su -c perfmtk performance
 su -c perfmtk balanced
