@@ -22,9 +22,6 @@ debug.sf.auto_latch_unsignaled=false
 # Disable transaction tracing
 debug.sf.enable_transaction_tracing=false
 
-# MTK fast charging support
-persist.vendor.mediatek.fast_charging.support=true
-
 # LMK
 sys.lmk.reportkills=0
 persist.sys.lmk.reportkills=false
@@ -33,5 +30,5 @@ persist.sys.lmk.reportkills=false
 ro.config.low_ram=
 
 # PerfXT config
-sys.perfmtk.current_profile=balanced
-sys.perfmtk.thermal_state=enabled
+sys.perfmtk.current_profile=
+sys.perfmtk.thermal_state=
