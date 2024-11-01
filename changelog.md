@@ -1,6 +1,6 @@
 ## Changelog
 
-- Fixed an issue related to FPSGO.
-- Fixed an issue that caused the "thermal_limit" script to not run in the init script.
-- Fixed an issue that caused the profile and thermal settings to return to the default settings when updating the module.
-- Improvements in the general structure of the installation script.
+- Problems were solved in some module scripts.
+- An options menu is added when you run the script through terminal in both scripts.
+- The general logic of both scripts has been improved.
+- Improvements in the implementation of obtaining CPU frequencies in the perfmtk script.
