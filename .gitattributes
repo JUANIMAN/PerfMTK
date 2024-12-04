@@ -7,3 +7,4 @@ META-INF/** text eol=lf
 
 # Treat system files as binary
 system/** binary
+common/**/** binary
