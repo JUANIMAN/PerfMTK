@@ -1,7 +1,7 @@
 id=perfmtk
 name=PerfMTK
-version=v6.9
-versionCode=69
+version=v7.5
+versionCode=75
 author=JUANIMAN
-description=Just install the PerfMTK Manager App or type "su -c perfmtk" in terminal(Termux)
+description=Just type "su -c perfmtk" in terminal(Termux) or install PerfMTK Manager App
 updateJson=https://github.com/JUANIMAN/PerfMTK/raw/main/update.json
