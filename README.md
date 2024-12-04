@@ -41,6 +41,7 @@ Or change performance profiles manually:
 su -c perfmtk performance
 su -c perfmtk balanced
 su -c perfmtk powersave
+su -c perfmtk powersave+
 ```
 
 To control thermal limitations:
