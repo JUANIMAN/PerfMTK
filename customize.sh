@@ -5,9 +5,9 @@ MODVER=$(grep_prop version "$TMPDIR/module.prop")
 MODAUTH=$(grep_prop author "$TMPDIR/module.prop")
 
 # System information
-BRAND=$(getprop ro.product.brand)
-SOC=$(getprop ro.hardware)
-SYSLANG=$(getprop persist.sys.locale)
+LANG=$(settings get system system_locales)
+BRAND=$(getprop ro.product.vendor.brand)
+SOC=$(getprop ro.board.platform)
 
 # RAM information
 total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
@@ -22,7 +22,7 @@ current_thermal=$(getprop sys.perfmtk.thermal_state)
 
 # Logging function
 log_info() {
-  if [[ $SYSLANG == es* ]]; then
+  if [[ $LANG == es* ]]; then
     ui_print "- $1"
     ui_print " "
   else
@@ -33,7 +33,7 @@ log_info() {
 
 # Error handling function
 abort_install() {
-  if [[ $SYSLANG == es* ]]; then
+  if [[ $LANG == es* ]]; then
     abort "× $1"
   else
     abort "× $2"
@@ -64,6 +64,64 @@ verify_requirements() {
   fi
 }
 
+# extract of Volume Key Selector - Addon by Zackptg5 @Github
+chooseport_legacy() {
+  # Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
+  # Calling it first time detects previous input. Calling it second time will do what we want
+  [ "$1" ] && local delay=$1 || local delay=3
+  local error=false
+  while true; do
+    timeout 0 $MODPATH/common/$ABI/keycheck
+    timeout $delay $MODPATH/common/$ABI/keycheck
+    local sel=$?
+    if [ $sel -eq 42 ]; then
+      return 0
+    elif [ $sel -eq 41 ]; then
+      return 1
+    elif $error; then
+      abort_install \
+        "¡No se detectó la tecla de volumen!" \
+        "Volume key not detected!"
+    else
+      error=true
+      log_info \
+        "No se detectó la tecla de volumen. Inténtalo de nuevo" \
+        "Volume key not detected. Try again"
+    fi
+  done
+}
+
+# Volume Key Selector function with getevent, improved by JUANIMAN @Github
+chooseport() {
+  # Original idea by chainfire and ianmacd @xda-developers
+  [ "$1" ] && local delay=$1 || local delay=3
+  local error=false
+  while true; do
+    local count=0
+    while [ $count -lt $delay ]; do
+      timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
+      count=$((count + 1))
+      if grep -q 'KEY_VOLUMEUP *DOWN' $TMPDIR/events; then
+        return 0
+      elif grep -q 'KEY_VOLUMEDOWN *DOWN' $TMPDIR/events; then
+        return 1
+      fi
+    done
+    if $error; then
+      log_info \
+        "No se detectó la tecla de volumen. Probando con keycheck" \
+        "Volume key not detected. Trying keycheck method"
+      chooseport_legacy $delay
+      return $?
+    else
+      error=true
+      log_info \
+        "No se detectó la tecla de volumen. Inténtalo de nuevo" \
+        "Volume key not detected. Try again"
+    fi
+  done
+}
+
 # Function to replace a property in system.prop
 replace_property() {
   local property="$1"
@@ -83,6 +141,16 @@ replace_property() {
   fi
 }
 
+set_def_conf() {
+  local prop_file="$1"
+
+  [ -z "$current_profile" ] && current_profile="balanced"
+  [ -z "$current_thermal" ] && current_thermal="enabled"
+
+  replace_property "sys.perfmtk.current_profile" "$current_profile" "$prop_file"
+  replace_property "sys.perfmtk.thermal_state" "$current_thermal" "$prop_file"
+}
+
 # Configure system properties based on device specs
 configure_system_props() {
   local prop_file="$1"
@@ -98,11 +166,7 @@ configure_system_props() {
   replace_property "ro.gfx.driver.0" "$gfx_driver" "$prop_file"
 
   # Set default config
-  [ -z "$current_profile" ] && current_profile="balanced"
-  [ -z "$current_thermal" ] && current_thermal="enabled"
-
-  replace_property "sys.perfmtk.current_profile" "$current_profile" "$prop_file"
-  replace_property "sys.perfmtk.thermal_state" "$current_thermal" "$prop_file"
+  set_def_conf "$prop_file"
 }
 
 # Install module files
@@ -117,17 +181,60 @@ install_module() {
       "Error extracting files"
   fi
 
-  sleep 0.4
+  chmod -R 0755 "$MODPATH/common"
+
+  if [[ $LANG == es* ]]; then
+    ui_print "⬆️ Volumen ARRIBA: Configuración Completa"
+    ui_print " • Ajustes adicionales del system.prop"
+    ui_print ""
+    ui_print "⬇️ Volumen ABAJO: Configuración Básica"
+    ui_print " • Ajustes esenciales del system.prop"
+    ui_print ""
+    ui_print "👉 Presiona VOL+/- para continuar..."
+    ui_print ""
+  else
+    ui_print "⬆️ Volume UP: Full Configuration"
+    ui_print " • Additional system.prop settings"
+    ui_print ""
+    ui_print "⬇️ Volume DOWN: Basic Configuration"
+    ui_print " • Essential system.prop settings"
+    ui_print ""
+    ui_print "👉 Press VOL+/- to continue..."
+    ui_print ""
+  fi
 
   local prop_file="$MODPATH/system.prop"
   cp "$prop_file" "$prop_file.bak"
+
+  if chooseport 5; then
+    # Full settings
+    log_info \
+      "Instalando todas las configuraciones del system.prop..." \
+      "Installing all system.prop settings..."
+
+    configure_system_props "$prop_file.bak"
+  else
+    # Minimal settings
+    log_info \
+      "Instalando configuraciones mínimas del system.prop..." \
+      "Installing minimal system.prop settings..."
+
+    sed -i '1,31d' "$prop_file.bak"
+
+    # Set default config
+    set_def_conf "$prop_file.bak"
+  fi
+
+  sleep 0.4
 
   log_info \
     "Configurando propiedades del sistema..." \
     "Configuring system properties..."
 
-  configure_system_props "$prop_file.bak"
   mv "$prop_file.bak" "$prop_file"
+
+  # clean
+  rm -rf "$MODPATH/common" 2>/dev/null
 
   sleep 0.2
 
