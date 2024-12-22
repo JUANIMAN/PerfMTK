@@ -10,7 +10,7 @@ BRAND=$(getprop ro.product.vendor.brand)
 SOC=$(getprop ro.board.platform)
 
 # RAM information
-total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+total_ram_kb=$(grep MemTotal /proc/meminfo | tr -cd '[:digit:]')
 total_ram_mb=$((total_ram_kb / 1024))
 
 # GFX driver
@@ -40,6 +40,16 @@ abort_install() {
   fi
 }
 
+print_sel() {
+  if [[ $LANG == es* ]]; then
+    ui_print "✓ $1"
+    ui_print " "
+  else
+    ui_print "✓ $2"
+    ui_print " "
+  fi
+}
+
 # Function to verify system requirements
 verify_requirements() {
   # Verify installation environment
@@ -64,64 +74,6 @@ verify_requirements() {
   fi
 }
 
-# extract of Volume Key Selector - Addon by Zackptg5 @Github
-chooseport_legacy() {
-  # Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
-  # Calling it first time detects previous input. Calling it second time will do what we want
-  [ "$1" ] && local delay=$1 || local delay=3
-  local error=false
-  while true; do
-    timeout 0 $MODPATH/common/$ABI/keycheck
-    timeout $delay $MODPATH/common/$ABI/keycheck
-    local sel=$?
-    if [ $sel -eq 42 ]; then
-      return 0
-    elif [ $sel -eq 41 ]; then
-      return 1
-    elif $error; then
-      abort_install \
-        "¡No se detectó la tecla de volumen!" \
-        "Volume key not detected!"
-    else
-      error=true
-      log_info \
-        "No se detectó la tecla de volumen. Inténtalo de nuevo" \
-        "Volume key not detected. Try again"
-    fi
-  done
-}
-
-# Volume Key Selector function with getevent, improved by JUANIMAN @Github
-chooseport() {
-  # Original idea by chainfire and ianmacd @xda-developers
-  [ "$1" ] && local delay=$1 || local delay=3
-  local error=false
-  while true; do
-    local count=0
-    while [ $count -lt $delay ]; do
-      timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
-      count=$((count + 1))
-      if grep -q 'KEY_VOLUMEUP *DOWN' $TMPDIR/events; then
-        return 0
-      elif grep -q 'KEY_VOLUMEDOWN *DOWN' $TMPDIR/events; then
-        return 1
-      fi
-    done
-    if $error; then
-      log_info \
-        "No se detectó la tecla de volumen. Probando con keycheck" \
-        "Volume key not detected. Trying keycheck method"
-      chooseport_legacy $delay
-      return $?
-    else
-      error=true
-      log_info \
-        "No se detectó la tecla de volumen. Inténtalo de nuevo" \
-        "Volume key not detected. Try again"
-    fi
-  done
-}
-
 # Function to replace a property in system.prop
 replace_property() {
   local property="$1"
@@ -141,16 +93,6 @@ replace_property() {
   fi
 }
 
-set_def_conf() {
-  local prop_file="$1"
-
-  [ -z "$current_profile" ] && current_profile="balanced"
-  [ -z "$current_thermal" ] && current_thermal="enabled"
-
-  replace_property "sys.perfmtk.current_profile" "$current_profile" "$prop_file"
-  replace_property "sys.perfmtk.thermal_state" "$current_thermal" "$prop_file"
-}
-
 # Configure system properties based on device specs
 configure_system_props() {
   local prop_file="$1"
@@ -166,7 +108,126 @@ configure_system_props() {
   replace_property "ro.gfx.driver.0" "$gfx_driver" "$prop_file"
 
   # Set default config
-  set_def_conf "$prop_file"
+  replace_property "sys.perfmtk.current_profile" "${current_profile:-balanced}" "$prop_file"
+  replace_property "sys.perfmtk.thermal_state" "${current_thermal:-enabled}" "$prop_file"
+}
+
+# volume selection
+select_option() {
+  local title_es=$1
+  local title_en=$2
+  local opt1_es=$3
+  local opt1_en=$4
+  local opt2_es=$5
+  local opt2_en=$6
+  local delay=${7:-5}
+
+  if [[ $LANG == es* ]]; then
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print "   $title_es"
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print ""
+    ui_print "[1] ⬆️ VOL+ : $opt1_es"
+    ui_print "[2] ⬇️ VOL- : $opt2_es"
+    ui_print ""
+    ui_print "⏳ Esperando selección... ($delay s)"
+    ui_print ""
+  else
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print "   $title_en"
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print ""
+    ui_print "[1] ⬆️ VOL+ : $opt1_en"
+    ui_print "[2] ⬇️ VOL- : $opt2_en"
+    ui_print ""
+    ui_print "⏳ Waiting for selection... ($delay s)"
+    ui_print ""
+  fi
+
+  # Try getevent first
+  local start=$(date +%s)
+  local end=$((start + delay))
+  while [ $(date +%s) -lt $end ]; do
+    timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
+    if grep -q 'KEY_VOLUMEUP *DOWN' $TMPDIR/events; then
+      print_sel \
+        "Opción 1 seleccionada" \
+        "Option 1 selected"
+      return 0
+    elif grep -q 'KEY_VOLUMEDOWN *DOWN' $TMPDIR/events; then
+      print_sel \
+        "Opción 2 seleccionada" \
+        "Option 2 selected"
+      return 1
+    fi
+  done
+
+  # Fallback to keycheck if getevent fails
+  if [[ $LANG == es* ]]; then
+    log_info "Usando método alternativo de detección..."
+  else
+    log_info "Using alternative detection method..."
+  fi
+
+  timeout 0 $MODPATH/common/$ABI/keycheck
+  timeout $delay $MODPATH/common/$ABI/keycheck
+  local sel=$?
+
+  if [ $sel -eq 42 ]; then
+    print_sel \
+      "Opción 1 seleccionada" \
+      "Option 1 selected"
+    return 0
+  elif [ $sel -eq 41 ]; then
+    print_sel \
+      "Opción 2 seleccionada" \
+      "Option 2 selected"
+    return 1
+  else
+    abort_install \
+      "No se detectó ninguna tecla de volumen" \
+      "No volume key detected"
+  fi
+}
+
+install_message() {
+  local file="$1"
+  local delay="$2"
+  local result
+
+  if [[ $file == "system.prop" ]]; then
+    select_option \
+      "Configuración de $file" \
+      "$file Configuration" \
+      "Ajustes adicionales del $file" \
+      "Additional settings of $file" \
+      "Ajustes esenciales del $file" \
+      "Essential settings of $file" \
+      "$delay"
+    result=$?
+  elif [[ $file == "post-fs-data.sh" ]]; then
+    select_option \
+      "Instalación de $file" \
+      "$file Installation" \
+      "Instalar (Puede causar bootloop)" \
+      "Install (May cause bootloop)" \
+      "No instalar (Recomendado si hay problemas)" \
+      "Don't install (Recommended if issues arise)" \
+      "$delay"
+    result=$?
+  elif [[ $file == "service.sh" ]]; then
+    select_option \
+      "Configuración de $file" \
+      "$file Configuration" \
+      "Ajustes adicionales del $file" \
+      "Additional settings of $file" \
+      "Ajustes esenciales del $file" \
+      "Essential settings of $file" \
+      "$delay"
+    result=$?
+  fi
+
+  return $result
 }
 
 # Install module files
@@ -183,49 +244,34 @@ install_module() {
 
   chmod -R 0755 "$MODPATH/common"
 
-  if [[ $LANG == es* ]]; then
-    ui_print "⬆️ Volumen ARRIBA: Configuración Completa"
-    ui_print " • Ajustes adicionales del system.prop"
-    ui_print ""
-    ui_print "⬇️ Volumen ABAJO: Configuración Básica"
-    ui_print " • Ajustes esenciales del system.prop"
-    ui_print ""
-    ui_print "👉 Presiona VOL+/- para continuar..."
-    ui_print ""
-  else
-    ui_print "⬆️ Volume UP: Full Configuration"
-    ui_print " • Additional system.prop settings"
-    ui_print ""
-    ui_print "⬇️ Volume DOWN: Basic Configuration"
-    ui_print " • Essential system.prop settings"
-    ui_print ""
-    ui_print "👉 Press VOL+/- to continue..."
-    ui_print ""
-  fi
-
   local prop_file="$MODPATH/system.prop"
   cp "$prop_file" "$prop_file.bak"
 
-  if chooseport 5; then
-    # Full settings
-    log_info \
-      "Instalando todas las configuraciones del system.prop..." \
-      "Installing all system.prop settings..."
+  install_message system.prop 10
 
-    configure_system_props "$prop_file.bak"
-  else
-    # Minimal settings
-    log_info \
-      "Instalando configuraciones mínimas del system.prop..." \
-      "Installing minimal system.prop settings..."
-
+  if [ $? -eq 1 ]; then
     sed -i '1,31d' "$prop_file.bak"
-
-    # Set default config
-    set_def_conf "$prop_file.bak"
   fi
 
-  sleep 0.4
+  sleep 1
+
+  install_message post-fs-data.sh 10
+
+  if [ $? -eq 1 ]; then
+    rm "$MODPATH/post-fs-data.sh"
+  fi
+
+  sleep 1
+
+  install_message service.sh 10
+
+  if [ $? -eq 1 ]; then
+    sed -i '8,52d' "$MODPATH/service.sh"
+  fi
+
+  sleep 1
+
+  configure_system_props "$prop_file.bak"
 
   log_info \
     "Configurando propiedades del sistema..." \
@@ -233,10 +279,10 @@ install_module() {
 
   mv "$prop_file.bak" "$prop_file"
 
+  sleep 1
+
   # clean
   rm -rf "$MODPATH/common" 2>/dev/null
-
-  sleep 0.2
 
   # Set permissions
   set_perm_recursive "$MODPATH" 0 0 0755 0644
@@ -245,9 +291,9 @@ install_module() {
 
 # Print module banner
 print_banner() {
-  ui_print "********************************"
-  ui_print "          $MODNAME $MODVER      "
-  ui_print "********************************"
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  ui_print "            $MODNAME $MODVER      "
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   ui_print "                            "
   ui_print " ███╗░░░███╗████████╗██╗░░██╗"
   ui_print " ████╗░████║╚══██╔══╝██║░██╔╝"
