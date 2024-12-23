@@ -107,12 +107,17 @@ configure_system_props() {
   # Set graphics driver
   replace_property "ro.gfx.driver.0" "$gfx_driver" "$prop_file"
 
-  # Set default config
-  replace_property "sys.perfmtk.current_profile" "${current_profile:-balanced}" "$prop_file"
-  replace_property "sys.perfmtk.thermal_state" "${current_thermal:-enabled}" "$prop_file"
+  # Set module configuration
+  set_mod_config "$prop_file"
 }
 
-# volume selection
+# Function to set the module configuration
+set_mod_config() {
+  replace_property "sys.perfmtk.current_profile" "${current_profile:-balanced}" "$1"
+  replace_property "sys.perfmtk.thermal_state" "${current_thermal:-enabled}" "$1"
+}
+
+# Volume Key Selector
 select_option() {
   local title_es=$1
   local title_en=$2
@@ -244,45 +249,36 @@ install_module() {
 
   chmod -R 0755 "$MODPATH/common"
 
-  local prop_file="$MODPATH/system.prop"
-  cp "$prop_file" "$prop_file.bak"
-
-  install_message system.prop 10
-
-  if [ $? -eq 1 ]; then
-    sed -i '1,31d' "$prop_file.bak"
+  if ! install_message system.prop 10; then
+    sed -i '1,31d' "$MODPATH/system.prop"
+    set_mod_config "$MODPATH/system.prop"
+  else
+    configure_system_props "$MODPATH/system.prop"
   fi
 
   sleep 1
 
-  install_message post-fs-data.sh 10
-
-  if [ $? -eq 1 ]; then
+  if ! install_message post-fs-data.sh 10; then
     rm "$MODPATH/post-fs-data.sh"
   fi
 
   sleep 1
 
-  install_message service.sh 10
-
-  if [ $? -eq 1 ]; then
-    sed -i '8,52d' "$MODPATH/service.sh"
+  if ! install_message service.sh 10; then
+    sed -e '8,52d' -e '56,75d' "$MODPATH/service.sh" > "$MODPATH/service.sh.new" &&
+      mv "$MODPATH/service.sh.new" "$MODPATH/service.sh"
   fi
 
   sleep 1
-
-  configure_system_props "$prop_file.bak"
 
   log_info \
     "Configurando propiedades del sistema..." \
     "Configuring system properties..."
 
-  mv "$prop_file.bak" "$prop_file"
-
-  sleep 1
-
   # clean
   rm -rf "$MODPATH/common" 2>/dev/null
+
+  sleep 1
 
   # Set permissions
   set_perm_recursive "$MODPATH" 0 0 0755 0644
@@ -323,5 +319,3 @@ install_module
 log_info \
   "¡Instalación completada!" \
   "Installation completed!"
-
-sleep 0.1
