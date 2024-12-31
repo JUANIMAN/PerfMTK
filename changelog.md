@@ -1,4 +1,6 @@
 ## Changelog
 
-- You can now select whether to install some module features
-- Improvements in volume key selector
+- Add feature to show progress animation in perfmtk script
+- Improved options management and improved help message in perfmtk script
+- Bug fixes and improvements to the installation script
+ 
