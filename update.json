@@ -1,6 +1,6 @@
 {
-    "version": "v8.0",
-    "versionCode": 80,
-    "zipUrl": "https://github.com/JUANIMAN/PerfMTK/releases/download/v8.0/PerfMTKv8.0.zip",
+    "version": "v8.5",
+    "versionCode": 85,
+    "zipUrl": "https://github.com/JUANIMAN/PerfMTK/releases/download/v8.5/PerfMTKv8.5.zip",
     "changelog": "https://github.com/JUANIMAN/PerfMTK/raw/main/changelog.md"
 }
