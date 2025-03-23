@@ -55,22 +55,31 @@ verify_requirements() {
   # Verify installation environment
   if ! $BOOTMODE; then
     abort_install \
-      "Instalación desde Recovery no soportada" \
-      "Installation from Recovery is not supported"
+      "Instalación desde Recovery no soportada." \
+      "Installation from Recovery is not supported."
   fi
 
   # Verify SOC compatibility
   if [[ $SOC != mt* ]]; then
     abort_install \
-      "[$SOC] no es compatible" \
-      "[$SOC] is not supported"
+      "[$SOC] no es compatible." \
+      "[$SOC] is not supported."
   fi
 
   # Verify architecture
   if [[ $ARCH != arm* ]]; then
     abort_install \
-      "Arquitectura [$ARCH] no soportada" \
-      "Architecture [$ARCH] not supported"
+      "Arquitectura [$ARCH] no soportada." \
+      "Architecture [$ARCH] not supported."
+  fi
+  
+  # Show system info
+  if [[ $LANG == es* ]]; then
+    log_info "Dispositivo: $(toupper $BRAND) con SOC $SOC"
+    log_info "RAM Total: $total_ram_mb MB"
+  else
+    log_info "Device: $(toupper $BRAND) with SOC $SOC"
+    log_info "Total RAM: $total_ram_mb MB"
   fi
 }
 
@@ -82,14 +91,14 @@ replace_property() {
 
   if [ ! -f "$file" ]; then
     abort_install \
-      "Archivo $file no encontrado" \
-      "File $file not found"
+      "Archivo $file no encontrado." \
+      "File $file not found."
   fi
 
   if ! sed -i "s/$property=.*/$property=$value/g" "$file"; then
     abort_install \
-      "Error al modificar $property en $file" \
-      "Error modifying $property in $file"
+      "Error al modificar $property en $file." \
+      "Error modifying $property in $file."
   fi
 }
 
@@ -123,9 +132,13 @@ select_option() {
   local title_en=$2
   local opt1_es=$3
   local opt1_en=$4
-  local opt2_es=$5
-  local opt2_en=$6
-  local delay=${7:-5}
+  local opt1_desc_es=$5
+  local opt1_desc_en=$6
+  local opt2_es=$7
+  local opt2_en=$8
+  local opt2_desc_es=$9
+  local opt2_desc_en=${10}
+  local delay=${11:-5}
 
   if [[ $LANG == es* ]]; then
     ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -133,7 +146,10 @@ select_option() {
     ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     ui_print ""
     ui_print "[1] ⬆️ VOL+ : $opt1_es"
+    ui_print "    $opt1_desc_es"
+    ui_print ""
     ui_print "[2] ⬇️ VOL- : $opt2_es"
+    ui_print "    $opt2_desc_es"
     ui_print ""
     ui_print "⏳ Esperando selección... ($delay s)"
     ui_print ""
@@ -143,7 +159,10 @@ select_option() {
     ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     ui_print ""
     ui_print "[1] ⬆️ VOL+ : $opt1_en"
+    ui_print "    $opt1_desc_en"
+    ui_print ""
     ui_print "[2] ⬇️ VOL- : $opt2_en"
+    ui_print "    $opt2_desc_en"
     ui_print ""
     ui_print "⏳ Waiting for selection... ($delay s)"
     ui_print ""
@@ -169,9 +188,9 @@ select_option() {
 
   # Fallback to keycheck if getevent fails
   if [[ $LANG == es* ]]; then
-    log_info "Usando método alternativo de detección..."
+    log_info "Usando método alternativo de detección de teclas..."
   else
-    log_info "Using alternative detection method..."
+    log_info "Using alternative key detection method..."
   fi
 
   timeout 0 $MODPATH/common/$ABI/keycheck
@@ -190,8 +209,8 @@ select_option() {
     return 1
   else
     abort_install \
-      "No se detectó ninguna tecla de volumen" \
-      "No volume key detected"
+      "No se detectó ninguna tecla de volumen." \
+      "No volume key detected."
   fi
 }
 
@@ -204,30 +223,56 @@ install_message() {
     select_option \
       "Configuración de $file" \
       "$file Configuration" \
-      "Ajustes adicionales del $file" \
-      "Additional settings of $file" \
-      "Ajustes esenciales del $file" \
-      "Essential settings of $file" \
+      "Ajustes completos" \
+      "Complete settings" \
+      "Incluye optimizaciones de rendimiento" \
+      "Includes performance optimizations" \
+      "Ajustes esenciales" \
+      "Essential settings only" \
+      "Solo configuración básica para estabilidad" \
+      "Only basic configuration for stability" \
       "$delay"
     result=$?
   elif [[ $file == "post-fs-data.sh" ]]; then
     select_option \
       "Instalación de $file" \
       "$file Installation" \
-      "Instalar (Puede causar bootloop)" \
-      "Install (May cause bootloop)" \
-      "No instalar (Recomendado si hay problemas)" \
-      "Don't install (Recommended if issues arise)" \
+      "Instalar script" \
+      "Install script" \
+      "Aplica optimizaciones al inicio del sistema (puede causar bootloop)" \
+      "Apply optimizations at system startup (may cause bootloop)" \
+      "No instalar script" \
+      "Don't install script" \
+      "Omitir esta optimización (recomendado si hay problemas de estabilidad)" \
+      "Skip this optimization (recommended if stability issues arise)" \
       "$delay"
     result=$?
   elif [[ $file == "service.sh" ]]; then
     select_option \
       "Configuración de $file" \
       "$file Configuration" \
-      "Ajustes adicionales del $file" \
-      "Additional settings of $file" \
-      "Ajustes esenciales del $file" \
-      "Essential settings of $file" \
+      "Ajustes completos" \
+      "Complete settings" \
+      "Optimizaciones adicionales después del arranque" \
+      "Additional optimizations after boot" \
+      "Ajustes esenciales" \
+      "Essential settings only" \
+      "Solo ajustes básicos para estabilidad" \
+      "Only basic adjustments for stability" \
+      "$delay"
+    result=$?
+  elif [[ $file == "daemon" ]]; then
+   select_option \
+      "PerfMTK Daemon" \
+      "PerfMTK Daemon" \
+      "Instalar Daemon" \
+      "Install Daemon" \
+      "Permite configurar perfiles específicos por aplicación" \
+      "Allows you to configure specific profiles per application" \
+      "No instalar Daemon" \
+      "Don't install Daemon" \
+      "Omitir esta función" \
+      "Skip this feature" \
       "$delay"
     result=$?
   fi
@@ -243,37 +288,76 @@ install_module() {
 
   if ! unzip -o "$ZIPFILE" -x 'META-INF/*' 'LICENSE' -d "$MODPATH" >&2; then
     abort_install \
-      "Error al extraer los archivos" \
-      "Error extracting files"
+      "Error al extraer los archivos." \
+      "Error extracting files. Check."
   fi
 
   chmod -R 0755 "$MODPATH/common"
 
   if ! install_message system.prop 10; then
+    log_info \
+      "Aplicando configuración esencial de system.prop..." \
+      "Applying essential system.prop configuration..."
     sed -i '1,31d' "$MODPATH/system.prop"
     set_mod_config "$MODPATH/system.prop"
   else
+    log_info \
+      "Aplicando configuración completa de system.prop..." \
+      "Applying complete system.prop configuration..."
     configure_system_props "$MODPATH/system.prop"
   fi
 
   sleep 1
 
   if ! install_message post-fs-data.sh 10; then
+    log_info \
+      "Omitiendo la instalación de post-fs-data.sh..." \
+      "Skipping post-fs-data.sh installation..."
     rm "$MODPATH/post-fs-data.sh"
+  else
+    log_info \
+      "Instalando post-fs-data.sh..." \
+      "Installing post-fs-data.sh..."
   fi
 
   sleep 1
 
   if ! install_message service.sh 10; then
+    log_info \
+      "Aplicando configuración esencial de service.sh..." \
+      "Applying essential service.sh configuration..."
     sed -e '8,52d' -e '56,75d' "$MODPATH/service.sh" > "$MODPATH/service.sh.new" &&
       mv "$MODPATH/service.sh.new" "$MODPATH/service.sh"
+  else
+    log_info \
+      "Aplicando configuración completa de service.sh..." \
+      "Applying complete service.sh configuration..."
+  fi
+
+  sleep 1
+
+  if install_message daemon 10; then
+    log_info \
+      "Instalando PerfMTK Daemon..." \
+      "Installing PerfMTK Daemon..."
+    mv "$MODPATH/common/$ABI/perfmtk_daemon" "$MODPATH/system/bin"
+  else
+    log_info \
+      "Omitiendo la instalación de PerfMTK Daemon..." \
+      "Skipping PerfMTK Daemon installation..."
   fi
 
   sleep 1
 
   log_info \
-    "Configurando propiedades del sistema..." \
-    "Configuring system properties..."
+    "Instalando binarios principales..." \
+    "Installing main binaries..."
+  mv "$MODPATH/common/$ABI/perfmtk" "$MODPATH/system/bin"
+  mv "$MODPATH/common/$ABI/thermal_limit" "$MODPATH/system/bin"
+
+  log_info \
+    "Configurando archivos del modulo..." \
+    "Configuring module files..."
 
   # clean
   rm -rf "$MODPATH/common" 2>/dev/null
@@ -300,6 +384,7 @@ print_banner() {
   ui_print " "
 }
 
+# Main
 print_banner
 verify_requirements
 sleep 1
@@ -317,5 +402,6 @@ sleep 0.2
 install_module
 
 log_info \
-  "¡Instalación completada!" \
-  "Installation completed!"
+  "¡Instalación completada! Reinicia para aplicar." \
+  "Installation completed! Reboot to apply."
+
