@@ -79,3 +79,9 @@ current_profile=$(getprop sys.perfmtk.current_profile)
 
 thermal_state=$(getprop sys.perfmtk.thermal_state)
 "$MODDIR/system/bin/thermal_limit" "${thermal_state%?}"
+
+# Start daemon
+if [ -f "$MODDIR/system/bin/perfmtk_daemon" ]; then
+  log -t PerfMTKDaemon "Starting Daemon"
+  "$MODDIR/system/bin/perfmtk_daemon" &
+fi
