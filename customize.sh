@@ -341,6 +341,10 @@ install_module() {
       "Instalando PerfMTK Daemon..." \
       "Installing PerfMTK Daemon..."
     mv "$MODPATH/common/$ABI/perfmtk_daemon" "$MODPATH/system/bin"
+
+    if [ ! -f "/data/local/app_profiles.conf" ]; then
+      mv "$MODPATH/app_profiles.conf" "/data/local"
+    fi
   else
     log_info \
       "Omitiendo la instalación de PerfMTK Daemon..." \
@@ -361,6 +365,7 @@ install_module() {
 
   # clean
   rm -rf "$MODPATH/common" 2>/dev/null
+  rm -f "$MODPATH/app_profiles.conf" 2>/dev/null
 
   sleep 1
 
