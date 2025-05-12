@@ -13,10 +13,10 @@ PerfMTK is a Magisk module specifically designed to optimize performance and pow
 - **Specific optimizations** for MediaTek SOCs
 - **Support for multiple CPU configurations** (dual-cluster, tri-cluster)
 - **Power modes**:
-  - `performance` - Maximum performance
-  - `balanced` - Balance between performance and battery
-  - `powersave` - Battery saving
-  - `powersave+` - Extreme battery saving
+  - **`performance`** - Maximum performance
+  - **`balanced`** - Balance between performance and battery
+  - **`powersave`** - Battery saving
+  - **`powersave+`** - Extreme battery saving
 - **Dynamic adjustment** of CPU and GPU frequencies
 - **Advanced configuration** of CPU and GPU governors
 - **Thermal control** with option to enable/disable thermal limitations
@@ -50,7 +50,7 @@ PerfMTK installs only what you choose during the installation process:
 
 | Component | Description |
 |------------|-------------|
-| **system.prop** | Includes system property settings to increase fluidity |
+| **system.prop** | Includes system property settings to increase smoothness |
 | **post-fs-data.sh** | Contains settings for important components such as cpuset, vm, mm and sched |
 | **service.sh** | Includes ppm and filesystem tweaks to improve overall performance |
 | **perfmtk_daemon** | Background process that identifies foreground applications and applies energy profiles according to configuration |
