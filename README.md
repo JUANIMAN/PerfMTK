@@ -137,7 +137,8 @@ If you encounter any issues:
 1. Make sure you're using the latest version of PerfMTK
 2. Verify that your device is compatible
 3. Try rebooting your device after making changes
-4. If problems persist, please report the issue in the [GitHub issues section](https://github.com/JUANIMAN/PerfMTK/issues) with detailed information about your device and the problem you're experiencing
+4. If problems persist, please report the issue in the [GitHub issues section](https://github.com/JUANIMAN/PerfMTK/issues) with detailed information about your device and the problem you're experiencing.
+5. [![Join the Telegram group](https://img.shields.io/badge/PerfMTK%20Telegram%20group-blue?style=flat-square&logo=telegram)](https://t.me/PerfMTK_chat) for support and suggestions
 > [!CAUTION]
 > Bootloops may occur in some custom ROMs, if this happens please delete the module folder from the recovery or constult https://topjohnwu.github.io/Magisk/faq.html#:~:text=I%20installed%20a%20module%20and%20it%20bootlooped%20my%20device
 
