@@ -298,7 +298,7 @@ install_module() {
     log_info \
       "Aplicando configuración esencial de system.prop..." \
       "Applying essential system.prop configuration..."
-    sed -i '1,31d' "$MODPATH/system.prop"
+    sed -i '1,/# PerfXT config/d' "$MODPATH/system.prop"
     set_mod_config "$MODPATH/system.prop"
   else
     log_info \
@@ -326,8 +326,8 @@ install_module() {
     log_info \
       "Aplicando configuración esencial de service.sh..." \
       "Applying essential service.sh configuration..."
-    sed -e '8,52d' -e '56,75d' "$MODPATH/service.sh" > "$MODPATH/service.sh.new" &&
-      mv "$MODPATH/service.sh.new" "$MODPATH/service.sh"
+    sed -i '/# BEGIN_OPTIMIZATIONS_PPM/,/# END_OPTIMIZATIONS_PPM/d' "$MODPATH/service.sh"
+    sed -i '/# BEGIN_OPTIMIZATIONS_IO/,/# END_OPTIMIZATIONS_IO/d' "$MODPATH/service.sh"
   else
     log_info \
       "Aplicando configuración completa de service.sh..." \
@@ -344,6 +344,8 @@ install_module() {
 
     if [ ! -f "/data/local/app_profiles.conf" ]; then
       mv "$MODPATH/app_profiles.conf" "/data/local"
+    else
+      rm "$MODPATH/app_profiles.conf"
     fi
   else
     log_info \
@@ -364,8 +366,7 @@ install_module() {
     "Configuring module files..."
 
   # clean
-  rm -rf "$MODPATH/common" 2>/dev/null
-  rm -f "$MODPATH/app_profiles.conf" 2>/dev/null
+  rm -rf "$MODPATH/common"
 
   sleep 1
 

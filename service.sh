@@ -16,6 +16,9 @@ write() {
 # Tweak writeback
 write /proc/sys/vm/dirty_writeback_centisecs 300
 
+# ---------------------------------------------------------
+# BEGIN_OPTIMIZATIONS_PPM
+# ---------------------------------------------------------
 # PPM Tweaks
 if [ -d /proc/ppm ]; then
   # Enable PPM
@@ -49,29 +52,43 @@ if [ -d /proc/ppm ]; then
     fi
   fi
 fi
+# ---------------------------------------------------------
+# END_OPTIMIZATIONS_PPM
+# ---------------------------------------------------------
 
 # wait for boot
 resetprop -w sys.boot_completed 0
 
+# ---------------------------------------------------------
+# BEGIN_OPTIMIZATIONS_IO
+# ---------------------------------------------------------
 # fs tune
-write /sys/block/mmcblk0/queue/iostats 0
-write /sys/block/mmcblk0/queue/read_ahead_kb 512
-write /sys/block/mmcblk0/queue/nr_requests 128
-write /sys/block/sda/queue/iostats 0
-write /sys/block/sda/queue/read_ahead_kb 128
-write /sys/block/sda/queue/nr_requests 128
-write /sys/block/sdb/queue/iostats 0
-write /sys/block/sdb/queue/read_ahead_kb 128
-write /sys/block/sdb/queue/nr_requests 128
-write /sys/block/sdc/queue/iostats 0
-write /sys/block/sdc/queue/read_ahead_kb 512
-write /sys/block/sdc/queue/nr_requests 128
-write /sys/block/dm-0/queue/read_ahead_kb 128
-write /sys/block/dm-1/queue/read_ahead_kb 128
-write /sys/block/dm-2/queue/read_ahead_kb 128
-write /sys/block/dm-3/queue/read_ahead_kb 128
-write /sys/block/dm-4/queue/read_ahead_kb 128
-write /sys/block/dm-5/queue/read_ahead_kb 128
+for queue in /sys/block/*/queue; do
+  device_name=$(basename "$(dirname "$queue")")
+
+  case "$device_name" in
+    loop*|ram*|zram*) continue ;;
+  esac
+
+  write "$queue/iostats" 0
+
+  case "$device_name" in
+    mmcblk*)
+      write "$queue/read_ahead_kb" 512
+      ;;
+    sd*)
+      write "$queue/read_ahead_kb" 512
+      ;;
+    *)
+      write "$queue/read_ahead_kb" 128
+      ;;
+  esac
+
+  write "$queue/nr_requests" 128
+done
+# ---------------------------------------------------------
+# END_OPTIMIZATIONS_IO
+# ---------------------------------------------------------
 
 # setup tweaks
 current_profile=$(getprop sys.perfmtk.current_profile)
@@ -80,8 +97,10 @@ current_profile=$(getprop sys.perfmtk.current_profile)
 thermal_state=$(getprop sys.perfmtk.thermal_state)
 "$MODDIR/system/bin/thermal_limit" "${thermal_state%?}"
 
+sleep 2
+
 # Start daemon
 if [ -f "$MODDIR/system/bin/perfmtk_daemon" ]; then
   log -t PerfMTKDaemon "Starting Daemon"
-  "$MODDIR/system/bin/perfmtk_daemon" &
+  "$MODDIR/system/bin/perfmtk_daemon"
 fi
