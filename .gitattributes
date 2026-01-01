@@ -4,6 +4,7 @@ META-INF/** text eol=lf
 *.sh text eol=lf
 *.md text eol=lf
 *.json text eol=lf
+*.conf text eol=lf
 
 # Treat system files as binary
 system/** binary
