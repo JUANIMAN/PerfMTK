@@ -1,0 +1,2 @@
+allow system_server su unix_stream_socket connectto
+allow system_server su unix_stream_socket { read write shutdown }
