@@ -33,16 +33,22 @@ PerfMTK is a Magisk module specifically designed to optimize performance and pow
 
 ## Installation
 
-1. Ensure you have Magisk installed on your MediaTek device
+1. Ensure you have Magisk or KernelSU installed on your MediaTek device
 2. Download the latest PerfMTK zip file from the [releases page](https://github.com/JUANIMAN/PerfMTK/releases/latest)
-3. Flash the zip file through Magisk Manager
+3. Install the module via Magisk manager or KernelSU manager
 4. During installation, you can choose which components to install:
    - system.prop
    - post-fs-data.sh
    - service.sh
-   - PerfMTK Daemon (may slightly affect battery life)
+   - PerfMTK Daemon
 5. Reboot your device
 6. Enjoy optimized performance!
+
+## If install PerfMTK Daemon
+For the best experience and battery life:
+1. Install LSPosed framework (if not already installed)
+2. Install the [PerfMTK-Hook](https://www.pling.com/p/1670559/) LSPosed module
+4. Reboot and enjoy automatic profile switching!
 
 ## Module Components
 
