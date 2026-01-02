@@ -10,7 +10,23 @@ write() {
   local file="$1"
   shift
 
-  [ -f "$file" ] && echo "$@" > "$file"
+  # Check if the file exists
+  [ ! -e "$file" ] && return 1
+
+  # Try to write directly
+  echo "$@" > "$file" 2>/dev/null && return 0
+
+  # If it fails, try with temporary permissions
+  local original_perms=$(stat -c '%a' "$file" 2>/dev/null)
+  if [ -n "$original_perms" ]; then
+    chmod u+rw "$file" 2>/dev/null
+    echo "$@" > "$file" 2>/dev/null
+    local result=$?
+    chmod "$original_perms" "$file" 2>/dev/null
+    return $result
+  fi
+
+  return 1
 }
 
 # Tweak writeback
