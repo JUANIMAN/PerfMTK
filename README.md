@@ -184,8 +184,8 @@ Edit these files to customize CPU frequencies, governors, GPU settings, and more
 If you encounter any issues:
 
 1. Make sure you're using the latest version of PerfMTK
-2. Verify that your device is compatible
-3. Try rebooting your device after making changes
+2. Do not set values outside those detected in the device configuration file.
+3. If you are experiencing [issues with the PerfMTK-Manager](https://github.com/JUANIMAN/PerfMTK/issues/27#issuecomment-3264779857), please check whether the app has root access in your root manager.
 4. If problems persist, please report the issue in the [GitHub issues section](https://github.com/JUANIMAN/PerfMTK/issues) with detailed information about your device and the problem you're experiencing.
 5. [![Join the Telegram group](https://img.shields.io/badge/PerfMTK%20Telegram%20group-blue?style=flat-square&logo=telegram)](https://t.me/PerfMTK_chat) for support and suggestions
 > [!CAUTION]
