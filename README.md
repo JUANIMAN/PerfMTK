@@ -46,7 +46,7 @@ PerfMTK is a Magisk module specifically designed to optimize performance and pow
 
 ## If install PerfMTK Daemon
 For the best experience and battery life:
-1. Install LSPosed framework (if not already installed)
+1. Install [LSPosed framework](https://github.com/JingMatrix/LSPosed/releases/download/v1.10.2/LSPosed-v1.10.2-7182-zygisk-release.zip) (if not already installed)
 2. Install the [PerfMTK-Hook](https://www.pling.com/p/1670559/) LSPosed module
 4. Reboot and enjoy automatic profile switching!
 
