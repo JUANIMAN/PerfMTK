@@ -11,18 +11,18 @@ PerfMTK is a Magisk module specifically designed to optimize performance and pow
 ## Features
 
 - **Specific optimizations** for MediaTek SOCs
-- **Support for multiple CPU configurations** (dual-cluster, tri-cluster)
+- **Automatic hardware detection**: Detects CPU architecture (4, 8, 4+4, 6+2, 4+3+1), GPU type, FPSGO, and UFS availability
+- **Customizable profile configurations**: Edit profile settings via easy-to-understand `.conf` files
+- **Persistent configuration storage**:
+  - Device config: `/data/adb/modules/perfmtk/config/device.conf`
+  - Profile configs: `/data/adb/modules/perfmtk/config/profiles/*.conf`
 - **Power modes**:
   - **`performance`** - Maximum performance
   - **`balanced`** - Balance between performance and battery
   - **`powersave`** - Battery saving
   - **`powersave+`** - Extreme battery saving
-- **Dynamic adjustment** of CPU and GPU frequencies
-- **Advanced configuration** of CPU and GPU governors
 - **Thermal control** with option to enable/disable thermal limitations
-- **Memory optimization** with zram and swap adjustments
 - **I/O improvements** with parameter optimization for UFS storage
-- **Gaming enhancements** for a superior gaming experience
 
 ## Compatibility
 
@@ -97,10 +97,13 @@ com.netflix.mediaclient=powersave
 ## Usage
 
 ### Via Terminal (e.g., Termux)
-
-To see the complete menu:
-```
+```bash
 su -c perfmtk
+```
+
+Help:
+```bash
+su -c perfmtk --help
 ```
 
 To change performance profiles manually:
@@ -126,6 +129,46 @@ su -c thermal_limit enable
 # Disable thermal limitations (be careful with overheating)
 su -c thermal_limit disable
 ```
+
+For configuration profiles:
+```bash
+su -c perfmtk --detect         # Detect device hardware
+su -c perfmtk --generate       # Generate default profiles
+su -c perfmtk --list           # List available profiles
+su -c perfmtk --info           # Show device hardware info
+su -c perfmtk --edit <profile> # Edit profile configuration
+su -c perfmtk <custom_profile> # Apply custom profile
+```
+
+### Configuration File Format
+
+Profiles use an intuitive INI-style format:
+```ini
+[CPU]
+GOVERNOR="schedutil"
+DOWN_RATE_LIMIT_US=1000
+UP_RATE_LIMIT_US=1000
+CORE_CONFIG="cpu0:4:4|cpu4:4:0"
+MAX_FREQS="2000000 1800000"
+MIN_FREQS="500000 500000"
+
+[GPU]
+GPU_OPP_INDEX=-1
+GPU_GOVERNOR="dummy"
+
+[DEVFREQ]
+DVF_GOVERNOR="userspace"
+
+[UFS]
+UFS_GOVERNOR="simple_ondemand"
+UFS_CLK_ENABLE=1
+
+[FPSGO]
+FORCE_ONOFF=2
+BOOST_TA=0
+```
+
+Edit these files to customize CPU frequencies, governors, GPU settings, and more!
 
 ### Via PerfMTK Manager App
 
