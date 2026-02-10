@@ -280,6 +280,44 @@ install_message() {
   return $result
 }
 
+# Backup existing configuration
+backup_config() {
+  local config_dir="$MODPATH/config"
+  local backup_dir="/data/adb/perfmtk_backup"
+
+  if [ -d "/data/adb/modules/perfmtk/config" ]; then
+    log_info \
+      "Respaldando configuración existente..." \
+      "Backing up existing configuration..."
+
+    mkdir -p "$backup_dir"
+
+    cp -r /data/adb/modules/perfmtk/config/* "$backup_dir/" 2>/dev/null
+  fi
+}
+
+# Restore configuration
+restore_config() {
+  local config_dir="$MODPATH/config"
+  local backup_dir="/data/adb/perfmtk_backup"
+
+  if [ -d "$backup_dir" ]; then
+    log_info \
+      "Restaurando configuración anterior..." \
+      "Restoring previous configuration..."
+
+    mkdir -p "$config_dir"
+
+    cp -r "$backup_dir"/* "$config_dir/" 2>/dev/null
+
+    rm -rf "$backup_dir"
+
+    log_info \
+      "Configuración restaurada exitosamente" \
+      "Configuration restored successfully"
+  fi
+}
+
 # Install module files
 install_module() {
   log_info \
@@ -340,8 +378,7 @@ install_module() {
     log_info \
       "Instalando PerfMTK Daemon..." \
       "Installing PerfMTK Daemon..."
-    mv "$MODPATH/common/$ABI/perfmtk_daemon" "$MODPATH/system/bin"
-
+    mv "$MODPATH/common/$ABI/perfmtk_daemon" "$MODPATH"
     if [ ! -f "/data/local/app_profiles.conf" ]; then
       mv "$MODPATH/app_profiles.conf" "/data/local"
     else
@@ -372,6 +409,7 @@ install_module() {
 
   # Set permissions
   set_perm_recursive "$MODPATH" 0 0 0755 0644
+  set_perm "$MODPATH/perfmtk_daemon" 0 0 0755
   set_perm_recursive "$MODPATH/system/bin" 0 2000 0755 0755
 }
 
@@ -405,7 +443,11 @@ log_info \
 
 sleep 0.2
 
+backup_config
+
 install_module
+
+restore_config
 
 log_info \
   "¡Instalación completada! Reinicia para aplicar." \
