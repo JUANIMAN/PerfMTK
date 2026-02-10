@@ -1,32 +1,52 @@
 # Changelog
 
+## v11.1
+
 ### Added
-- **Automatic Hardware Detection** for MediaTek (MTK) devices
-- **Customizable Profile Configurations**: Profile configurations now editable via `.conf` files
-- **Persistent Configuration Storage**:
-  - Device config: `/data/adb/modules/perfmtk/config/device.conf`
-  - Profile configs: `/data/adb/modules/perfmtk/config/profiles/*.conf`
 
+* Backup and restore logic for profile configurations.
+* Cache system to optimize frequent read operations.
+* Persistent logging system with severity levels: INFO, WARN, ERROR.
+* Extended CPU information in device configuration.
+* New command-line options:
 
-#### New CLI commands:
-```
-- perfmtk --detect         # Detect device hardware
-- perfmtk --generate       # Generate default profiles
-- perfmtk --list           # List available profiles
-- perfmtk --info           # Show device hardware info
-- perfmtk --edit <profile> # Edit profile configuration
-- perfmtk <custom_profile> # Apply custom profile
-```
+  * `--backup`
+  * `--restore`
+  * `--status`
+  * `--validate`
+* Detailed logging for all daemon operations.
+* Reduced overhead by minimizing subshell usage and unnecessary pipes.
+* Improved trap handling and process cleanup.
 
-### PerfMTK Daemon
-- **IPC via Unix Domain Socket**: Event-driven architecture using abstract Unix socket for improved battery efficiency
-  - Receives screen on/off state changes
-  - Receives foreground application package updates
-  - Integrated with LSPosed hook module (optional but recommended for best performance)
-- **Automatic Fallback**: Uses legacy `dumpsys power` and `dumpsys window` queries when LSPosed is not installed
-- **SELinux Policy**: Added proper policy to permit `system_server` → `perfmtk_daemon` socket connections
+---
 
-### Other changes
-- Improved installation and boot scripts
-- Replaced brittle, line-based cleanup logic with marker-range operations
-- Replaced hard-coded I/O tuning in `service.sh` with dynamic I/O tuning
+### Changed
+
+* Updated version to **v11.1**.
+* Updated execution path for `perfmtk_daemon`.
+* Improved overall performance, logging, and profile management.
+
+---
+
+### Daemon Changes
+
+* Switched IPC socket implementation from **STREAM** to **DGRAM**.
+* Updated SELinux policy rules to allow DGRAM socket communication.
+* Improved core logic for application switching and profile application.
+* Optimized string processing routines.
+
+---
+
+### Fixed
+
+* Multiple internal daemon bugs.
+* Edge cases in profile application and app context switching.
+
+---
+
+### Notes
+
+* **Important:** The daemon now uses a **DGRAM-based, message-oriented IPC model**.
+* **LSPosed module update required:**
+  The LSPosed module must be updated to use the new DGRAM socket communication mechanism.
+  Older versions expecting STREAM-based communication will no longer be compatible.
