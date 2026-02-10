@@ -116,7 +116,7 @@ thermal_state=$(getprop sys.perfmtk.thermal_state)
 sleep 2
 
 # Start daemon
-if [ -f "$MODDIR/system/bin/perfmtk_daemon" ]; then
+if [ -f "$MODDIR/perfmtk_daemon" ]; then
   log -t PerfMTKDaemon "Starting Daemon"
-  "$MODDIR/system/bin/perfmtk_daemon"
+  "$MODDIR/perfmtk_daemon"
 fi
