@@ -1,2 +1,2 @@
-allow system_server su unix_stream_socket connectto
-allow system_server su unix_stream_socket { read write shutdown }
+allow system_server su unix_dgram_socket { read write sendto };
+allow su system_server unix_dgram_socket { read write recvfrom };
