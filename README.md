@@ -132,12 +132,15 @@ su -c thermal_limit disable
 
 For configuration profiles:
 ```bash
-su -c perfmtk --detect         # Detect device hardware
-su -c perfmtk --generate       # Generate default profiles
-su -c perfmtk --list           # List available profiles
-su -c perfmtk --info           # Show device hardware info
-su -c perfmtk --edit <profile> # Edit profile configuration
-su -c perfmtk <custom_profile> # Apply custom profile
+perfmtk --detect               # Detect device and generate configs
+perfmtk --generate             # Generate default profiles
+perfmtk --list                 # List available profiles
+perfmtk --info                 # Show device information
+perfmtk --status               # Show current system status
+perfmtk --edit <profile>       # Edit profile configuration
+perfmtk --validate <profile>   # Validate profile configuration
+perfmtk --backup               # Backup current profiles
+perfmtk --restore              # Restore from backup
 ```
 
 ### Configuration File Format
