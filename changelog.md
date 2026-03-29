@@ -1,26 +1,16 @@
 # Changelog
 
-## v12.0
+## v12.1
 
 ### Changed
 
-* Bumped version to **v12.0**
 * Bug fixes and performance improvements
-
----
-
-### Daemon
-
-* Switched back to **STREAM_SOCKET** for IPC
-* Updated **SELinux** policies to support stream socket communication
-* Improved performance and efficiency
-* Reduced excessive logging
+* Improved hardware detection
+* New interactive menu
+* Improved animations 
 
 ---
 
 ### Notes
 
-* **Breaking change:** The daemon now uses **STREAM_SOCKET** instead of DGRAM
-* **LSPosed module update required:**
-  The LSPosed module must be updated to use stream socket communication mechanism
-* Additional improvements and optimizations were also applied to the **LSPosed module** for better compatibility and performance
+* **If you update:** Please run the command `su -c perfmtk -d` in the terminal after installing and restarting
