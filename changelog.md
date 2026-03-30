@@ -1,13 +1,10 @@
 # Changelog
 
-## v12.1
+## v12.2
 
 ### Changed
 
-* Bug fixes and performance improvements
-* Improved hardware detection
-* New interactive menu
-* Improved animations 
+* Resolved an issue that could cause errors on some devices
 
 ---
 
