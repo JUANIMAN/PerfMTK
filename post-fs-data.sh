@@ -57,9 +57,9 @@ write /proc/sys/vm/watermark_boost_factor 0
 write /sys/kernel/mm/lru_gen/enabled y
 
 # zram
-write /proc/sys/vm/page-cluster 3
+write /proc/sys/vm/page-cluster 0
 write /proc/sys/vm/swappiness 100
-write /sys/kernel/mm/swap/vma_ra_enabled true
+write /sys/kernel/mm/swap/vma_ra_enabled false
 
 # kernel
 write /proc/sys/kernel/sched_pelt_multiplier 4
