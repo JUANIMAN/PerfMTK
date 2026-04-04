@@ -1,13 +1,15 @@
 # Changelog
 
-## v12.2
+## v13.0
 
 ### Changed
 
-* Resolved an issue that could cause errors on some devices
-
+* **post-fs-data.sh**: optimized memory handling (swap/zram) for lower latency and better responsiveness
+* **Optimized daemon**: reduced overhead, asynchronous logging, and more efficient execution model
+* **Optimized perfmtk**: removed reliance on external commands in parsing, significantly reducing profile application time
+* **service.sh tuning updates**: improved I/O parameters for better stability and responsiveness, and remove dirty_writeback_centisecs tweak 
+* **Installer improvements**: cleaner flow, reduced complexity, and more reliable execution
 ---
 
 ### Notes
-
-* **If you update:** Please run the command `su -c perfmtk -d` in the terminal after installing and restarting
+* Update the LSPosed module to v4.0 to improve compatibility
