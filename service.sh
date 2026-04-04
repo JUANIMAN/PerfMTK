@@ -86,8 +86,6 @@ for queue in /sys/block/*/queue; do
     loop*|ram*|zram*) continue ;;
   esac
 
-  write "$queue/iostats" 0
-
   case "$device_name" in
     mmcblk*)
       write "$queue/read_ahead_kb" 512
@@ -100,7 +98,7 @@ for queue in /sys/block/*/queue; do
       ;;
   esac
 
-  write "$queue/nr_requests" 128
+  write "$queue/nr_requests" 64
 done
 # ---------------------------------------------------------
 # END_OPTIMIZATIONS_IO
