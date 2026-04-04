@@ -29,8 +29,10 @@ write() {
   return 1
 }
 
-# Tweak writeback
-write /proc/sys/vm/dirty_writeback_centisecs 300
+for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+  chown system:system "$policy/scaling_governor"
+  chmod 0660 "$policy/scaling_governor"
+done
 
 # ---------------------------------------------------------
 # BEGIN_OPTIMIZATIONS_PPM
