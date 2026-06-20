@@ -74,8 +74,8 @@ verify_requirements() {
   fi
 
   log_info \
-    "Dispositivo: $(to_upper "$BRAND") | SOC: $SOC" \
-    "Device: $(to_upper "$BRAND") | SOC: $SOC"
+    "Dispositivo: $(toupper "$BRAND") | SOC: $SOC" \
+    "Device: $(toupper "$BRAND") | SOC: $SOC"
 
   log_info \
     "RAM Total: ${total_ram_mb} MB" \
