@@ -105,11 +105,64 @@ replace_property() {
 configure_system_props() {
   local prop_file="$1"
 
-  # Set low RAM property
-  if [ $total_ram_mb -lt 3072 ]; then
+  if [ "$total_ram_mb" -le 2200 ]; then
+    # ----------------------------------------------------------------
+    #  2 GB RAM or lower (Low-RAM Target)
+    # ----------------------------------------------------------------
     replace_property "ro.config.low_ram" "true" "$prop_file"
-  else
+    replace_property "dalvik.vm.usap_pool_enabled" "false" "$prop_file"
+    replace_property "dalvik.vm.heapstartsize" "8m" "$prop_file"
+    replace_property "dalvik.vm.heapgrowthlimit" "128m" "$prop_file"
+    replace_property "dalvik.vm.heapsize" "512m" "$prop_file"
+    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
+    replace_property "dalvik.vm.heapminfree" "512k" "$prop_file"
+    replace_property "dalvik.vm.heapmaxfree" "8m" "$prop_file"
+    replace_property "dalvik.vm.dex2oat-Xmx" "256m" "$prop_file"
+
+  elif [ "$total_ram_mb" -le 3500 ]; then
+    # ----------------------------------------------------------------
+    #  3 GB RAM (Mid-Low Target)
+    # ----------------------------------------------------------------
     replace_property "ro.config.low_ram" "false" "$prop_file"
+    replace_property "dalvik.vm.usap_pool_enabled" "true" "$prop_file"
+    replace_property "dalvik.vm.usap_pool_size_max" "3" "$prop_file"
+    replace_property "dalvik.vm.heapstartsize" "8m" "$prop_file"
+    replace_property "dalvik.vm.heapgrowthlimit" "288m" "$prop_file"
+    replace_property "dalvik.vm.heapsize" "768m" "$prop_file"
+    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
+    replace_property "dalvik.vm.heapminfree" "2m" "$prop_file"
+    replace_property "dalvik.vm.heapmaxfree" "8m" "$prop_file"
+    replace_property "dalvik.vm.dex2oat-Xmx" "512m" "$prop_file"
+
+  elif [ "$total_ram_mb" -le 5200 ]; then
+    # ----------------------------------------------------------------
+    #  4 GB RAM (Standard Mid Target)
+    # ----------------------------------------------------------------    
+    replace_property "ro.config.low_ram" "false" "$prop_file"
+    replace_property "dalvik.vm.usap_pool_enabled" "true" "$prop_file"
+    replace_property "dalvik.vm.usap_pool_size_max" "4" "$prop_file"
+    replace_property "dalvik.vm.heapstartsize" "8m" "$prop_file"
+    replace_property "dalvik.vm.heapgrowthlimit" "384m" "$prop_file"
+    replace_property "dalvik.vm.heapsize" "1024m" "$prop_file"
+    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
+    replace_property "dalvik.vm.heapminfree" "4m" "$prop_file"
+    replace_property "dalvik.vm.heapmaxfree" "16m" "$prop_file"
+    replace_property "dalvik.vm.dex2oat-Xmx" "1024m" "$prop_file"
+
+  else
+    # ----------------------------------------------------------------
+    #  6 GB - 8 GB RAM or higher (High-End Target)
+    # ----------------------------------------------------------------
+    replace_property "ro.config.low_ram" "false" "$prop_file"
+    replace_property "dalvik.vm.usap_pool_enabled" "true" "$prop_file"
+    replace_property "dalvik.vm.usap_pool_size_max" "5" "$prop_file"
+    replace_property "dalvik.vm.heapstartsize" "16m" "$prop_file"
+    replace_property "dalvik.vm.heapgrowthlimit" "512m" "$prop_file"
+    replace_property "dalvik.vm.heapsize" "1536m" "$prop_file"
+    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
+    replace_property "dalvik.vm.heapminfree" "8m" "$prop_file"
+    replace_property "dalvik.vm.heapmaxfree" "32m" "$prop_file"
+    replace_property "dalvik.vm.dex2oat-Xmx" "1024m" "$prop_file"
   fi
 
   # Set graphics driver
