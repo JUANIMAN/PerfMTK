@@ -1,15 +1,19 @@
 # Changelog
 
-## v13.0
+## v14.3
 
 ### Changed
 
-* **post-fs-data.sh**: optimized memory handling (swap/zram) for lower latency and better responsiveness
-* **Optimized daemon**: reduced overhead, asynchronous logging, and more efficient execution model
-* **Optimized perfmtk**: removed reliance on external commands in parsing, significantly reducing profile application time
-* **service.sh tuning updates**: improved I/O parameters for better stability and responsiveness, and remove dirty_writeback_centisecs tweak 
-* **Installer improvements**: cleaner flow, reduced complexity, and more reliable execution
+* **post-fs-data.sh**: revert memory management changes
+* **Optimized daemon and perfmtk**: Bug fixes and performance improvements 
+* **service.sh tuning updates**: Set the nr_request parameter to 64 to speed up the I/O response, and add checks to the scripts tweak 
+* **Installer improvements**: Dynamically set Dalvik settings based on the total amount of RAM
+
+### Added
+* Add support for the new versions of KSU
+* Add the new daemon settings: SCREEN_OFF_PROFILE and APP_DEBOUNCE_MS in app_profiles.conf
+
 ---
 
 ### Notes
-* Update the LSPosed module to v4.0 to improve compatibility
+* Update the LSPosed module to v5.0 to improve compatibility
