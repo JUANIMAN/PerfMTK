@@ -91,16 +91,17 @@ for queue in /sys/block/*/queue; do
   case "$device_name" in
     mmcblk*)
       write "$queue/read_ahead_kb" 512
+      write "$queue/nr_requests" 64
       ;;
     sd*)
       write "$queue/read_ahead_kb" 512
+      write "$queue/nr_requests" 64
       ;;
     *)
       write "$queue/read_ahead_kb" 128
+      write "$queue/nr_requests" 128
       ;;
   esac
-
-  write "$queue/nr_requests" 64
 done
 # ---------------------------------------------------------
 # END_OPTIMIZATIONS_IO
@@ -108,15 +109,17 @@ done
 
 # setup tweaks
 current_profile=$(getprop sys.perfmtk.current_profile)
-"$MODDIR/system/bin/perfmtk" "$current_profile"
+if [ -n "$current_profile" ]; then
+    "$MODDIR/system/bin/perfmtk" "$current_profile"
+fi
 
 thermal_state=$(getprop sys.perfmtk.thermal_state)
-"$MODDIR/system/bin/thermal_limit" "${thermal_state%?}"
-
-sleep 2
+if [ -n "$thermal_state" ]; then
+    "$MODDIR/system/bin/thermal_limit" "${thermal_state%?}"
+fi
 
 # Start daemon
 if [ -f "$MODDIR/perfmtk_daemon" ]; then
   log -t PerfMTKDaemon "Starting Daemon"
-  "$MODDIR/perfmtk_daemon"
+  "$MODDIR/perfmtk_daemon" &
 fi
