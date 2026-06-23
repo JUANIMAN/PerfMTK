@@ -1,19 +1,12 @@
 # Changelog
 
-## v14.3
+## v14.4
 
-### Changed
+### What's new
 
-* **post-fs-data.sh**: revert memory management changes
-* **Optimized daemon and perfmtk**: Bug fixes and performance improvements 
-* **service.sh tuning updates**: Set the nr_request parameter to 64 to speed up the I/O response, and add checks to the scripts tweak 
-* **Installer improvements**: Dynamically set Dalvik settings based on the total amount of RAM
+* **Smoother scrolling**: The module now automatically patches MediaTek's power table (`powerscntbl.xml`) to remove artificial CPU speed restrictions during scroll gestures, resulting in noticeably more fluid scrolling across all apps
 
-### Added
-* Add support for the new versions of KSU
-* Add the new daemon settings: SCREEN_OFF_PROFILE and APP_DEBOUNCE_MS in app_profiles.conf
+### Improvements
 
----
-
-### Notes
-* Update the LSPosed module to v5.0 to improve compatibility
+* **Cleaner installation experience**: The installation menus have been reworked for better clarity and responsiveness
+* **Smarter memory configuration**: Dalvik heap settings are now fully calculated based on your device's actual RAM, ensuring a better balance between app performance and memory usage
