@@ -33,10 +33,6 @@ ro.config.low_ram=
 dalvik.vm.usap_pool_enabled=
 dalvik.vm.usap_pool_size_max=
 dalvik.vm.heapstartsize=
-dalvik.vm.heapgrowthlimit=
-dalvik.vm.heapsize=
-dalvik.vm.heaptargetutilization=
-dalvik.vm.heapminfree=
 dalvik.vm.heapmaxfree=
 dalvik.vm.dex2oat-Xmx=
 
