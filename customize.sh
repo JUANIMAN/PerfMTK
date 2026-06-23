@@ -112,10 +112,6 @@ configure_system_props() {
     replace_property "ro.config.low_ram" "true" "$prop_file"
     replace_property "dalvik.vm.usap_pool_enabled" "false" "$prop_file"
     replace_property "dalvik.vm.heapstartsize" "8m" "$prop_file"
-    replace_property "dalvik.vm.heapgrowthlimit" "128m" "$prop_file"
-    replace_property "dalvik.vm.heapsize" "512m" "$prop_file"
-    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
-    replace_property "dalvik.vm.heapminfree" "512k" "$prop_file"
     replace_property "dalvik.vm.heapmaxfree" "8m" "$prop_file"
     replace_property "dalvik.vm.dex2oat-Xmx" "256m" "$prop_file"
 
@@ -127,10 +123,6 @@ configure_system_props() {
     replace_property "dalvik.vm.usap_pool_enabled" "true" "$prop_file"
     replace_property "dalvik.vm.usap_pool_size_max" "3" "$prop_file"
     replace_property "dalvik.vm.heapstartsize" "8m" "$prop_file"
-    replace_property "dalvik.vm.heapgrowthlimit" "288m" "$prop_file"
-    replace_property "dalvik.vm.heapsize" "768m" "$prop_file"
-    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
-    replace_property "dalvik.vm.heapminfree" "2m" "$prop_file"
     replace_property "dalvik.vm.heapmaxfree" "8m" "$prop_file"
     replace_property "dalvik.vm.dex2oat-Xmx" "512m" "$prop_file"
 
@@ -142,10 +134,6 @@ configure_system_props() {
     replace_property "dalvik.vm.usap_pool_enabled" "true" "$prop_file"
     replace_property "dalvik.vm.usap_pool_size_max" "4" "$prop_file"
     replace_property "dalvik.vm.heapstartsize" "8m" "$prop_file"
-    replace_property "dalvik.vm.heapgrowthlimit" "384m" "$prop_file"
-    replace_property "dalvik.vm.heapsize" "1024m" "$prop_file"
-    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
-    replace_property "dalvik.vm.heapminfree" "4m" "$prop_file"
     replace_property "dalvik.vm.heapmaxfree" "16m" "$prop_file"
     replace_property "dalvik.vm.dex2oat-Xmx" "1024m" "$prop_file"
 
@@ -157,10 +145,6 @@ configure_system_props() {
     replace_property "dalvik.vm.usap_pool_enabled" "true" "$prop_file"
     replace_property "dalvik.vm.usap_pool_size_max" "5" "$prop_file"
     replace_property "dalvik.vm.heapstartsize" "16m" "$prop_file"
-    replace_property "dalvik.vm.heapgrowthlimit" "512m" "$prop_file"
-    replace_property "dalvik.vm.heapsize" "1536m" "$prop_file"
-    replace_property "dalvik.vm.heaptargetutilization" "0.75" "$prop_file"
-    replace_property "dalvik.vm.heapminfree" "8m" "$prop_file"
     replace_property "dalvik.vm.heapmaxfree" "32m" "$prop_file"
     replace_property "dalvik.vm.dex2oat-Xmx" "1024m" "$prop_file"
   fi
@@ -178,58 +162,127 @@ set_mod_config() {
   replace_property "sys.perfmtk.thermal_state"   "${current_thermal:-enabled}" "$1"
 }
 
+# Function to analyze, clone and modify MediaTek's powerscntbl.xml
+optimize_power_table() {
+  local src_file="/vendor/etc/powerscntbl.xml"
+  [ ! -f "$src_file" ] && src_file="/system/vendor/etc/powerscntbl.xml"
+  
+  local dest_dir="$MODPATH/system/vendor/etc"
+  local dest_file="$dest_dir/powerscntbl.xml"
+
+  if [ -f "$src_file" ]; then
+    if grep -q 'powerhint="MTKPOWER_HINT_UX_SCROLLING_COMMON"' "$src_file"; then
+      log_info \
+        "Removiendo rate limits restrictivos en powerscntbl.xml..." \
+        "Removing restrictive rate limits in powerscntbl.xml..."
+
+      mkdir -p "$dest_dir"
+      cp "$src_file" "$dest_file"
+
+      sed -i '/powerhint="MTKPOWER_HINT_UX_SCROLLING_COMMON"/,/<\/scenario>/ {
+        /^[[:space:]]*<data cmd="PERF_RES_SCHED_UTIL_UP_RATE_LIMIT_US_CLUSTER_/d;
+        /^[[:space:]]*<data cmd="PERF_RES_SCHED_UTIL_DOWN_RATE_LIMIT_US_CLUSTER_/d;
+      }' "$dest_file"
+    fi
+  fi
+}
+
 # Volume Key Selector
 select_option() {
-  local title_es=$1  title_en=$2
-  local opt1_es=$3   opt1_en=$4
-  local desc1_es=$5  desc1_en=$6
-  local opt2_es=$7   opt2_en=$8
-  local desc2_es=$9  desc2_en=${10}
-  local delay=${11:-5}
+  local key="$1"
+  local delay="${2:-5}"
+
+  local title="" opt1="" desc1="" opt2="" desc2="" msg_waiting=""
 
   if [[ $LANG == es* ]]; then
-    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ui_print "   $title_es"
-    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ui_print ""
-    ui_print "[1] ⬆️  VOL+ : $opt1_es"
-    ui_print "    $desc1_es"
-    ui_print ""
-    ui_print "[2] ⬇️  VOL- : $opt2_es"
-    ui_print "    $desc2_es"
-    ui_print ""
-    ui_print "⏳ Esperando selección... (${delay}s)"
-    ui_print ""
+    msg_waiting="⏳ Esperando selección..."
+    case "$key" in
+      system.prop)
+        title="Configuración de system.prop"
+        opt1="Ajustes completos"
+        desc1="Incluye optimizaciones de rendimiento"
+        opt2="Ajustes esenciales"
+        desc2="Solo configuración básica para estabilidad"
+        ;;
+      post-fs-data.sh)
+        title="Instalación de post-fs-data.sh"
+        opt1="Instalar script"
+        desc1="Aplica optimizaciones al inicio (puede causar bootloop)"
+        opt2="No instalar script"
+        desc2="Omitir (recomendado si hay problemas de estabilidad)"
+        ;;
+      service.sh)
+        title="Configuración de service.sh"
+        opt1="Ajustes completos"
+        desc1="Optimizaciones adicionales tras el arranque"
+        opt2="Ajustes esenciales"
+        desc2="Solo ajustes básicos para estabilidad"
+        ;;
+      daemon)
+        title="PerfMTK Daemon"
+        opt1="Instalar Daemon"
+        desc1="Configura perfiles específicos por aplicación"
+        opt2="No instalar Daemon"
+        desc2="Omitir esta función"
+        ;;
+    esac
   else
-    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ui_print "   $title_en"
-    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ui_print ""
-    ui_print "[1] ⬆️  VOL+ : $opt1_en"
-    ui_print "    $desc1_en"
-    ui_print ""
-    ui_print "[2] ⬇️  VOL- : $opt2_en"
-    ui_print "    $desc2_en"
-    ui_print ""
-    ui_print "⏳ Waiting for selection... (${delay}s)"
-    ui_print ""
+    msg_waiting="⏳ Waiting for selection..."
+    case "$key" in
+      system.prop)
+        title="system.prop Configuration"
+        opt1="Complete settings"
+        desc1="Includes performance optimizations"
+        opt2="Essential settings only"
+        desc2="Only basic configuration for stability"
+        ;;
+      post-fs-data.sh)
+        title="post-fs-data.sh Installation"
+        opt1="Install script"
+        desc1="Applies optimizations at startup (may cause bootloop)"
+        opt2="Don't install script"
+        desc2="Skip (recommended if stability issues arise)"
+        ;;
+      service.sh)
+        title="service.sh Configuration"
+        opt1="Complete settings"
+        desc1="Additional optimizations after boot"
+        opt2="Essential settings only"
+        desc2="Only basic adjustments for stability"
+        ;;
+      daemon)
+        title="PerfMTK Daemon"
+        opt1="Install Daemon"
+        desc1="Allows configuring specific profiles per application"
+        opt2="Don't install Daemon"
+        desc2="Skip this feature"
+        ;;
+    esac
   fi
 
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  ui_print "   $title"
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  ui_print ""
+  ui_print "[1] ⬆️  VOL+ : $opt1"
+  ui_print "    $desc1"
+  ui_print ""
+  ui_print "[2] ⬇️  VOL- : $opt2"
+  ui_print "    $desc2"
+  ui_print ""
+  ui_print "$msg_waiting (${delay}s)"
+  ui_print ""
+
   # Try getevent first
-  local start end
-  start=$(date +%s)
-  end=$((start + delay))
-  while [ $(date +%s) -lt $end ]; do
+  local deadline=$(( $(date +%s) + delay ))
+
+  while [ "$(date +%s)" -lt "$deadline" ]; do
     timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
     if grep -q 'KEY_VOLUMEUP *DOWN' $TMPDIR/events; then
-      print_sel \
-        "Opción 1 seleccionada" \
-        "Option 1 selected"
+      print_sel "Opción 1 seleccionada" "Option 1 selected"
       return 0
     elif grep -q 'KEY_VOLUMEDOWN *DOWN' $TMPDIR/events; then
-      print_sel \
-        "Opción 2 seleccionada" \
-        "Option 2 selected"
+      print_sel "Opción 2 seleccionada" "Option 2 selected"
       return 1
     fi
   done
@@ -244,75 +297,16 @@ select_option() {
   local sel=$?
 
   if [ $sel -eq 42 ]; then
-    print_sel \
-      "Opción 1 seleccionada" \
-      "Option 1 selected"
+    print_sel "Opción 1 seleccionada" "Option 1 selected"
     return 0
   elif [ $sel -eq 41 ]; then
-    print_sel \
-      "Opción 2 seleccionada" \
-      "Option 2 selected"
+    print_sel "Opción 2 seleccionada" "Option 2 selected"
     return 1
   else
     abort_install \
       "No se detectó ninguna tecla de volumen." \
       "No volume key detected."
   fi
-}
-
-install_message() {
-  local file="$1"
-  local delay="${2:-10}"
-
-  case "$file" in
-    system.prop)
-      select_option \
-        "Configuración de $file"       "$file Configuration" \
-        "Ajustes completos"            "Complete settings" \
-        "Incluye optimizaciones de rendimiento" "Includes performance optimizations" \
-        "Ajustes esenciales"           "Essential settings only" \
-        "Solo configuración básica para estabilidad" "Only basic configuration for stability" \
-        "$delay"
-      ;;
-    post-fs-data.sh)
-      select_option \
-        "Instalación de $file"         "$file Installation" \
-        "Instalar script"              "Install script" \
-        "Aplica optimizaciones al inicio (puede causar bootloop)" \
-          "Applies optimizations at startup (may cause bootloop)" \
-        "No instalar script"           "Don't install script" \
-        "Omitir (recomendado si hay problemas de estabilidad)" \
-          "Skip (recommended if stability issues arise)" \
-        "$delay"
-      ;;
-    service.sh)
-      select_option \
-        "Configuración de $file"       "$file Configuration" \
-        "Ajustes completos"            "Complete settings" \
-        "Optimizaciones adicionales tras el arranque" \
-          "Additional optimizations after boot" \
-        "Ajustes esenciales"           "Essential settings only" \
-        "Solo ajustes básicos para estabilidad" \
-          "Only basic adjustments for stability" \
-        "$delay"
-      ;;
-    daemon)
-      select_option \
-        "PerfMTK Daemon"               "PerfMTK Daemon" \
-        "Instalar Daemon"              "Install Daemon" \
-        "Configura perfiles específicos por aplicación" \
-          "Allows configuring specific profiles per application" \
-        "No instalar Daemon"           "Don't install Daemon" \
-        "Omitir esta función"          "Skip this feature" \
-        "$delay"
-      ;;
-    *)
-      log_info \
-        "Componente desconocido: $file. Omitiendo." \
-        "Unknown component: $file. Skipping."
-      return 1
-      ;;
-  esac
 }
 
 # Backup existing configuration
@@ -365,7 +359,7 @@ install_module() {
   chmod -R 0755 "$MODPATH/common"
 
   # --- system.prop ---
-  if install_message system.prop 10; then
+  if select_option system.prop 10; then
     log_info \
       "Aplicando configuración completa de system.prop..." \
       "Applying complete system.prop configuration..."
@@ -378,10 +372,10 @@ install_module() {
     set_mod_config "$MODPATH/system.prop"
   fi
 
-  sleep 0.3
+  sleep 0.8
 
   # --- post-fs-data.sh ---
-  if install_message post-fs-data.sh 10; then
+  if select_option post-fs-data.sh 10; then
     log_info \
       "Instalando post-fs-data.sh..." \
       "Installing post-fs-data.sh..."
@@ -392,10 +386,10 @@ install_module() {
     rm -f "$MODPATH/post-fs-data.sh"
   fi
 
-  sleep 0.3
+  sleep 0.8
 
   # --- service.sh ---
-  if install_message service.sh 10; then
+  if select_option service.sh 10; then
     log_info \
       "Aplicando configuración completa de service.sh..." \
       "Applying complete service.sh configuration..."
@@ -407,10 +401,10 @@ install_module() {
     sed -i '/# BEGIN_OPTIMIZATIONS_IO/,/# END_OPTIMIZATIONS_IO/d'   "$MODPATH/service.sh"
   fi
 
-  sleep 0.3
+  sleep 0.8
 
   # --- daemon ---
-  if install_message daemon 10; then
+  if select_option daemon 10; then
     log_info \
       "Instalando PerfMTK Daemon..." \
       "Installing PerfMTK Daemon..."
@@ -428,7 +422,7 @@ install_module() {
     rm -f "$MODPATH/app_profiles.conf"
   fi
 
-  sleep 0.3
+  sleep 0.8
 
   # --- Main binaries ---
   log_info \
@@ -437,6 +431,9 @@ install_module() {
   mv "$MODPATH/common/$ABI/perfmtk"       "$MODPATH/system/bin/perfmtk"
   mv "$MODPATH/common/$ABI/thermal_limit" "$MODPATH/system/bin/thermal_limit"
 
+  # --- MediaTek Power Table Optimization ---
+  optimize_power_table
+
   log_info \
     "Configurando archivos del modulo..." \
     "Configuring module files..."
@@ -444,7 +441,7 @@ install_module() {
   # Cleanup
   rm -rf "$MODPATH/common"
 
-  sleep 0.3
+  sleep 0.8
 
   # --- Permissions ---
   set_perm_recursive "$MODPATH"            0 0    0755 0644
@@ -473,7 +470,7 @@ print_banner() {
 # Main
 print_banner
 verify_requirements
-sleep 0.3
+sleep 0.5
 
 log_info \
   "Por $MODAUTH" \
@@ -483,7 +480,7 @@ log_info \
   "Desbloquea todo el potencial de tu $(toupper $BRAND)" \
   "Unlock the full potential of your $(toupper $BRAND)"
 
-sleep 0.2
+sleep 0.3
 
 backup_config
 install_module
