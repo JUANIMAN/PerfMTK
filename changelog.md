@@ -1,12 +1,13 @@
 # Changelog
 
-## v14.4
+## v15.0
 
 ### What's new
 
-* **Smoother scrolling**: The module now automatically patches MediaTek's power table (`powerscntbl.xml`) to remove artificial CPU speed restrictions during scroll gestures, resulting in noticeably more fluid scrolling across all apps
+* **Advanced CPU Tuning (Multi-Policy Support)**: You can now customize speed behaviors (governors and responsiveness limits) independently for each CPU cluster (e.g., performance and efficiency cores), allowing for highly optimized custom profiles.
+* **Better GPU Compatibility**: Improved hardware detection for newer MediaTek devices, ensuring the graphics processor frequencies are detected and managed correctly even on custom kernels.
 
 ### Improvements
 
-* **Cleaner installation experience**: The installation menus have been reworked for better clarity and responsiveness
-* **Smarter memory configuration**: Dalvik heap settings are now fully calculated based on your device's actual RAM, ensuring a better balance between app performance and memory usage
+* **Rock-solid profile validation**: The engine now performs a thorough self-diagnostic scan on your profile settings before applying them, preventing invalid configurations from causing system instability.
+* **Android System Reliability**: Cleaned up internal commands to use native Android shells rather than external utilities, reducing resource usage and ensuring smooth operation across all Android versions.
