@@ -148,9 +148,14 @@ perfmtk --restore              # Restore from backup
 Profiles use an intuitive INI-style format:
 ```ini
 [CPU]
-GOVERNOR="schedutil"
-DOWN_RATE_LIMIT_US=1000
-UP_RATE_LIMIT_US=1000
+# One GOVERNOR value applies to all policies; multiple values follow CPU policy order.
+GOVERNOR="schedutil schedutil"
+# One value applies to all policies; multiple values follow CPU policy order.
+DOWN_RATE_LIMIT_US="1000 1000"
+UP_RATE_LIMIT_US="1000 10000"
+# Optional individual override by policy index.
+POLICY_1_GOVERNOR=schedutil
+POLICY_1_UP_RATE_LIMIT_US=20000
 CORE_CONFIG="cpu0:4:4|cpu4:4:0"
 MAX_FREQS="2000000 1800000"
 MIN_FREQS="500000 500000"
