@@ -1,13 +1,20 @@
 # Changelog
 
-## v15.0
+## v15.2
 
 ### What's new
 
-* **Advanced CPU Tuning (Multi-Policy Support)**: You can now customize speed behaviors (governors and responsiveness limits) independently for each CPU cluster (e.g., performance and efficiency cores), allowing for highly optimized custom profiles.
-* **Better GPU Compatibility**: Improved hardware detection for newer MediaTek devices, ensuring the graphics processor frequencies are detected and managed correctly even on custom kernels.
+* **Optimized GPU Engine**: Completely redesigned how graphics frequencies are mapped and applied, resulting in faster profile switches and better management of game profiles.
 
 ### Improvements
 
-* **Rock-solid profile validation**: The engine now performs a thorough self-diagnostic scan on your profile settings before applying them, preventing invalid configurations from causing system instability.
-* **Android System Reliability**: Cleaned up internal commands to use native Android shells rather than external utilities, reducing resource usage and ensuring smooth operation across all Android versions.
+* **Reduced Battery & CPU Overhead**: Replaced heavy system command calls with native, lightweight shell functions, resulting in a cleaner execution with less power consumption when checking or changing profiles.
+* **Refined Status Interface**: Improved the layout of the device status display and corrected frequency unit reporting so that the dashboard shows exact, readable values.
+
+---
+
+### Notes
+
+* **Configuration Update Recommended**: It is highly recommended to regenerate your device and profile configurations after updating. You can do this by running the following commands in a terminal (with root access):
+  * `su -c perfmtk -d` (to regenerate device configurations)
+  * `su -c perfmtk -g` (to regenerate default profiles)

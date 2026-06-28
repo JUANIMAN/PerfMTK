@@ -1,7 +1,7 @@
 id=perfmtk
 name=PerfMTK
-version=v15.0
-versionCode=150
+version=v15.2
+versionCode=152
 author=JUANIMAN
 description=Just type "su -c perfmtk" in terminal(Termux) or install PerfMTK Manager App
 updateJson=https://github.com/JUANIMAN/PerfMTK/raw/main/update.json
