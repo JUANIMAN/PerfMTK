@@ -1,90 +1,80 @@
 # PerfMTK
 
-**A Magisk module for MediaTek devices with Mali GPUs**
+**A high-performance systemless optimization module for MediaTek devices with Mali GPUs**
 
 [![GitHub Downloads](https://img.shields.io/github/downloads/JUANIMAN/PerfMTK/total)](https://github.com/JUANIMAN/PerfMTK/releases)
+[![Join the Telegram group](https://img.shields.io/badge/PerfMTK%20Telegram%20group-blue?style=flat-square&logo=telegram)](https://t.me/PerfMTK_chat)
 
 ## Overview
 
-PerfMTK is a Magisk module specifically designed to optimize performance and power efficiency on MediaTek devices. With multiple profiles and advanced configurations, PerfMTK gives you complete control over your device's performance.
+PerfMTK is a Magisk/KernelSU/APatch module designed to maximize performance and power efficiency on MediaTek devices. By managing CPU clusters, GPU configurations, I/O schedulers, and thermal engines, PerfMTK provides complete and granular control over your hardware.
+
+---
 
 ## Features
 
-- **Specific optimizations** for MediaTek SOCs
-- **Automatic hardware detection**: Detects CPU architecture (4, 8, 4+4, 6+2, 4+3+1), GPU type, FPSGO, and UFS availability
-- **Customizable profile configurations**: Edit profile settings via easy-to-understand `.conf` files
-- **Persistent configuration storage**:
-  - Device config: `/data/adb/modules/perfmtk/config/device.conf`
-  - Profile configs: `/data/adb/modules/perfmtk/config/profiles/*.conf`
-- **Power modes**:
-  - **`performance`** - Maximum performance
-  - **`balanced`** - Balance between performance and battery
-  - **`powersave`** - Battery saving
-  - **`powersave+`** - Extreme battery saving
-- **Thermal control** with option to enable/disable thermal limitations
-- **I/O improvements** with parameter optimization for UFS storage
+* **MediaTek SOC Tailored Optimizations**: Custom adjustments tuned specifically for MediaTek platforms.
+* **Automatic Hardware Detection**: Dynamically identifies CPU topology (big.LITTLE cluster layouts), Mali GPU models, FPSGO engine paths, and UFS platform configurations.
+* **Granular Profile Configurations**: Easily edit custom configurations via clean, user-friendly `.conf` files.
+* **Persistent Settings Storage**:
+  * Device hardware configuration: `/data/adb/modules/perfmtk/config/device.conf`
+  * Active energy profiles: `/data/adb/modules/perfmtk/config/profiles/*.conf`
+* **Tailored Power Profiles**:
+  * `performance` – Maximum hardware output for gaming and demanding apps.
+  * `balanced` – Default profile balancing smoothness and battery longevity.
+  * `powersave` – Standard battery-saving tweaks.
+  * `powersave+` – Aggressive throttling for maximum battery duration.
+* **Thermal Engine Control**: Option to toggle system-level thermal limitations (throttling limits).
+* **Storage Speedups**: Optimized I/O request parameters for UFS storage nodes.
 
-## Compatibility
+---
 
-- Device with MediaTek processor and Mali GPU
-- Android 9.0 or higher
-- Kernel version 4.14.x or higher
-- Magisk 27 or higher installed
+## Compatibility & Requirements
+
+* **Processor**: MediaTek SoC with a Mali GPU.
+* **Android OS**: Android 9.0 (Pie) or higher.
+* **Linux Kernel**: Version 4.14.x or higher.
+* **Root Managers**: Magisk (v27+ recommended), KernelSU, or APatch.
+
+> [!IMPORTANT]
+> **Attention KernelSU & APatch Users:**  
+> If you are using newer root solutions. It is highly recommended to install a magic mount helper module (like **Hybrid Mount** or **Mountify** module) to ensure proper filesystem mount capabilities.
+
+---
 
 ## Installation
 
-1. Ensure you have Magisk or KernelSU installed on your MediaTek device
-2. Download the latest PerfMTK zip file from the [releases page](https://github.com/JUANIMAN/PerfMTK/releases/latest)
-3. Install the module via Magisk manager or KernelSU manager
-4. During installation, you can choose which components to install:
-   - system.prop
-   - post-fs-data.sh
-   - service.sh
-   - PerfMTK Daemon
-5. Reboot your device
-6. Enjoy optimized performance!
+1. Ensure you have a supported root manager installed (Magisk, KernelSU, or APatch).
+2. Download the latest release `.zip` from the [Releases page](https://github.com/JUANIMAN/PerfMTK/releases/latest).
+3. Flash the `.zip` package using your root manager app.
+4. During installation, select your preferred features using the Volume keys:
+   * `system.prop` tweaks
+   * `post-fs-data.sh` configurations
+   * `service.sh` system adjustments
+   * **PerfMTK Daemon** (for app-specific profiles)
+5. Reboot your device to apply the modifications.
 
-## If install PerfMTK Daemon
-For the best experience and battery life:
-1. Install [LSPosed framework](https://github.com/JingMatrix/LSPosed/releases/download/v1.10.2/LSPosed-v1.10.2-7182-zygisk-release.zip) (if not already installed)
-2. Install the [PerfMTK-Hook](https://www.pling.com/p/1670559/) LSPosed module
-4. Reboot and enjoy automatic profile switching!
+---
 
-## Module Components
+## Automatic Profile Switching (Daemon Setup)
 
-PerfMTK installs only what you choose during the installation process:
+If you chose to install the **PerfMTK Daemon**, you can automatically switch energy profiles depending on the active foreground application:
 
-| Component | Description |
-|------------|-------------|
-| **system.prop** | Includes system property settings to increase smoothness |
-| **post-fs-data.sh** | Contains settings for important components such as cpuset, vm, mm and sched |
-| **service.sh** | Includes ppm and filesystem tweaks to improve overall performance |
-| **perfmtk_daemon** | Background process that identifies foreground applications and applies energy profiles according to configuration |
+1. Install the [LSPosed framework](https://github.com/JingMatrix/LSPosed) (if not already installed).
+2. Install the [PerfMTK-Hook](https://www.pling.com/p/1670559/) LSPosed companion app.
+3. Open the LSPosed manager and ensure the **PerfMTK-Hook** module is enabled.
+4. Reboot your device to activate automatic, app-aware profile shifting!
 
-> [!WARNING]
-> The perfmtk_daemon runs in the background to provide app-specific profiles, which may slightly increase battery consumption. If battery life is your primary concern, consider using the module without this component.
+### App-Specific Mapping
 
-### App-specific profiles with daemon
+The daemon monitors apps and maps them using `/data/local/app_profiles.conf`. You can customize this file manually or manage it via the [PerfMTK Manager app](https://github.com/JUANIMAN/PerfMTK-Manager).
 
-The PerfMTK Daemon uses a configuration file called **app_profiles.conf** (located by default at `/data/local/app_profiles.conf`) to assign specific profiles to different applications. You can modify it manually or use the [PerfMTK Manager app](https://github.com/JUANIMAN/PerfMTK-Manager).
-
-The default content of the app_profiles.conf file is:
-
-```
-# Configuration file for PerfMTK Daemon  
-# Format: package_name=energy_profile
-  
-# Default global profile when no application from the list is in the foreground  
-DEFAULT_PROFILE=balanced
-```
-
-You can customize it to assign different profiles to your favorite applications, for example:
-
-```
+Example file configuration:
+```ini
 # Configuration file for PerfMTK Daemon
 # Format: package_name=energy_profile
 
-# Default global profile when no application from the list is in the foreground  
+# Default global profile when no matching app is in the foreground
 DEFAULT_PROFILE=balanced
 
 com.tencent.ig=performance
@@ -94,68 +84,79 @@ com.android.chrome=balanced
 com.netflix.mediaclient=powersave
 ```
 
+---
+
+## Module Components
+
+| Component | Description |
+| :--- | :--- |
+| **system.prop** | Optimizes UI rendering properties to improve visual smoothness. |
+| **post-fs-data.sh** | Core settings applied early in boot (cpuset, virtual memory, memory management). |
+| **service.sh** | Boot-completed service optimizing MTK PPM and storage interface files. |
+| **perfmtk_daemon** | Background listener that detects app focus and applies corresponding power profiles. |
+
+> [!WARNING]
+> Running the background daemon requires continuous focus polling, which may slightly increase standby power consumption. For maximum battery conservation, consider running the module without installing the daemon.
+
+---
+
 ## Usage
 
-### Via Terminal (e.g., Termux)
+### Command Line Interface (e.g. Termux)
+
+Run the main menu (requires root):
 ```bash
 su -c perfmtk
 ```
 
-Help:
+Get system options and commands:
 ```bash
 su -c perfmtk --help
 ```
 
-To change performance profiles manually:
+#### Manual Profile Application
 ```bash
-# Maximum performance
-su -c perfmtk performance
-
-# Balanced (default)
-su -c perfmtk balanced
-
-# Battery saving
-su -c perfmtk powersave
-
-# Extreme battery saving
-su -c perfmtk powersave+
+su -c perfmtk performance   # Apply performance profile
+su -c perfmtk balanced      # Apply balanced profile
+su -c perfmtk powersave     # Apply saving profile
+su -c perfmtk powersave+    # Apply extreme saving profile
 ```
 
-For thermal limitation control:
+#### Thermal Throttling Control
 ```bash
-# Enable thermal limitations
-su -c thermal_limit enable
-
-# Disable thermal limitations (be careful with overheating)
-su -c thermal_limit disable
+su -c thermal_limit enable   # Re-enable standard temperature controls
+su -c thermal_limit disable  # Bypass thermal throttle caps (Watch your temps!)
 ```
 
-For configuration profiles:
+#### Advanced Engine Commands
 ```bash
-perfmtk --detect               # Detect device and generate configs
-perfmtk --generate             # Generate default profiles
-perfmtk --list                 # List available profiles
-perfmtk --info                 # Show device information
-perfmtk --status               # Show current system status
-perfmtk --edit <profile>       # Edit profile configuration
-perfmtk --validate <profile>   # Validate profile configuration
-perfmtk --backup               # Backup current profiles
-perfmtk --restore              # Restore from backup
+perfmtk --detect               # Scan hardware and build device.conf
+perfmtk --generate             # Build default active profile files
+perfmtk --list                 # View existing config profiles
+perfmtk --info                 # Show hardware detection details
+perfmtk --status               # Monitor live core frequencies & status
+perfmtk --edit <profile>       # Edit a configuration profile
+perfmtk --validate <profile>   # Scan profile for formatting/value issues
+perfmtk --backup               # Backup existing configs
+perfmtk --restore              # Restore configs from backup
 ```
 
-### Configuration File Format
+### Profile Configuration Format
 
-Profiles use an intuitive INI-style format:
+Profiles are saved in INI format. You can customize them to lock down frequencies, Governors, and options:
+
 ```ini
 [CPU]
+# Sets governors and rate limits per cluster policy.
 # One GOVERNOR value applies to all policies; multiple values follow CPU policy order.
 GOVERNOR="schedutil schedutil"
 # One value applies to all policies; multiple values follow CPU policy order.
 DOWN_RATE_LIMIT_US="1000 1000"
-UP_RATE_LIMIT_US="1000 10000"
+UP_RATE_LIMIT_US="1000 1000"
 # Optional individual override by policy index.
 POLICY_1_GOVERNOR=schedutil
 POLICY_1_UP_RATE_LIMIT_US=20000
+
 CORE_CONFIG="cpu0:4:4|cpu4:4:0"
 MAX_FREQS="2000000 1800000"
 MIN_FREQS="500000 500000"
@@ -176,33 +177,28 @@ FORCE_ONOFF=2
 BOOST_TA=0
 ```
 
-Edit these files to customize CPU frequencies, governors, GPU settings, and more!
-
-### Via PerfMTK Manager App
-
-1. Open the [PerfMTK Manager app](https://github.com/JUANIMAN/PerfMTK-Manager)
-2. Select the desired performance profile
-3. Enable or disable thermal limitations according to your needs
-4. Configure specific profiles for your favorite applications
-
-📥 **Download**: [Latest version of PerfMTK Manager](https://github.com/JUANIMAN/PerfMTK-Manager/releases/latest)
+---
 
 ## Troubleshooting
 
-If you encounter any issues:
+1. Always check that you are running the latest release of **PerfMTK**.
+2. Avoid setting custom frequencies/governors that are not listed in your generated `device.conf`.
+3. If the **PerfMTK Manager App** fails to load profiles, double-check that you granted Root permission inside your Root Manager dashboard.
+4. If you face any issues, please open a ticket on the [GitHub Issues page](https://github.com/JUANIMAN/PerfMTK/issues).
 
-1. Make sure you're using the latest version of PerfMTK
-2. Do not set values outside those detected in the device configuration file.
-3. If you are experiencing [issues with the PerfMTK-Manager](https://github.com/JUANIMAN/PerfMTK/issues/27#issuecomment-3264779857), please check whether the app has root access in your root manager.
-4. If problems persist, please report the issue in the [GitHub issues section](https://github.com/JUANIMAN/PerfMTK/issues) with detailed information about your device and the problem you're experiencing.
-5. [![Join the Telegram group](https://img.shields.io/badge/PerfMTK%20Telegram%20group-blue?style=flat-square&logo=telegram)](https://t.me/PerfMTK_chat) for support and suggestions
 > [!CAUTION]
-> Bootloops may occur in some custom ROMs, if this happens please delete the module folder from the recovery or constult https://topjohnwu.github.io/Magisk/faq.html#:~:text=I%20installed%20a%20module%20and%20it%20bootlooped%20my%20device
+> Bootloops can occasionally occur when flashing system properties on certain highly modified custom ROMs. If your device bootloops, remove the module folder `/data/adb/modules/perfmtk` via recovery terminal or safe mode. Consult the [Magisk FAQ](https://topjohnwu.github.io/Magisk/faq.html) for detailed recovery steps.
 
-## License
+---
 
-This project is licensed under the [GPLv3 License](LICENSE).
+## Community & Support
 
-## Disclaimer
+Join the community for quick support, feature testing, and configuration sharing:
+* [![Telegram Chat](https://img.shields.io/badge/Telegram-PerfMTK%20Chat-blue?logo=telegram&style=flat-square)](https://t.me/PerfMTK_chat)
 
-Use this module at your own risk. While I strive for stability and performance, I cannot test all devices, so please report any bugs you find.
+---
+
+## License & Disclaimer
+
+* **License**: This project is licensed under the [GNU GPLv3 License](LICENSE).
+* **Disclaimer**: Use this module at your own risk. Overclocking/throttling modifications can cause heat or stability issues. The developer is not responsible for any bricked devices or hardware damage.
