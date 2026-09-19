@@ -4,22 +4,7 @@ ro.opengles.version=196610
 # GPU
 ro.gfx.driver.0=
 
-# RENDER
-debug.renderengine.backend=skiagl
-
-# Disable backpressure
-debug.sf.disable_backpressure=1
-debug.sf.enable_gl_backpressure=0
-
-# Disable HWC
-debug.sf.enable_hwc_vds=0
-debug.sf.predict_hwc_composition_strategy=0
-
-# latch unsignaled
-debug.sf.latch_unsignaled=true
-debug.sf.auto_latch_unsignaled=false
-
-# Disable transaction tracing
+# SurfaceFlinger Tracing
 debug.sf.enable_transaction_tracing=false
 
 # LMK
@@ -39,3 +24,8 @@ dalvik.vm.dex2oat-Xmx=
 # PerfXT config
 sys.perfmtk.current_profile=
 sys.perfmtk.thermal_state=
+
+# HyperOS / MIUI Memory Killer Disabler
+persist.sys.mms.use_integrated_memory_reclaim=false
+persist.sys.imr.memfree.limit=0
+persist.sys.mmms.switch=false

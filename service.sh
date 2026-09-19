@@ -5,18 +5,15 @@ MODDIR=${0%/*}
 # Initialization
 #################
 
-# Function to write to a file
+# Function to write to a file safely
 write() {
   local file="$1"
   shift
 
-  # Check if the file exists
   [ ! -e "$file" ] && return 1
 
-  # Try to write directly
   echo "$@" > "$file" 2>/dev/null && return 0
 
-  # If it fails, try with temporary permissions
   local original_perms=$(stat -c '%a' "$file" 2>/dev/null)
   if [ -n "$original_perms" ]; then
     chmod u+rw "$file" 2>/dev/null
@@ -30,19 +27,17 @@ write() {
 }
 
 for policy in /sys/devices/system/cpu/cpufreq/policy*; do
-  chown system:system "$policy/scaling_governor"
-  chmod 0660 "$policy/scaling_governor"
+  chown system:system "$policy/scaling_governor" 2>/dev/null
+  chmod 0660 "$policy/scaling_governor" 2>/dev/null
 done
 
 # ---------------------------------------------------------
 # BEGIN_OPTIMIZATIONS_PPM
 # ---------------------------------------------------------
-# PPM Tweaks
+# PPM Tweaks (Legacy MediaTek platforms)
 if [ -d /proc/ppm ]; then
-  # Enable PPM
   write /proc/ppm/enabled 1
 
-  # Disable PPM
   DEVICE=$(getprop ro.product.device)
   case "$DEVICE" in
     begonia | begoniain)
@@ -57,7 +52,6 @@ if [ -d /proc/ppm ]; then
       ;;
   esac
 
-  # cluster fix
   if [ -d /sys/devices/system/cpu/cpufreq/policy0 ]; then
     if [ -d /sys/devices/system/cpu/cpufreq/policy4 ]; then
       if [ -d /sys/devices/system/cpu/cpufreq/policy7 ]; then
@@ -74,13 +68,18 @@ fi
 # END_OPTIMIZATIONS_PPM
 # ---------------------------------------------------------
 
-# wait for boot
+# Wait for boot completion
 resetprop -w sys.boot_completed 0
+
+# Disable HyperOS aggressive IMR / MMMS background app killer
+resetprop -n persist.sys.mms.use_integrated_memory_reclaim false
+resetprop -n persist.sys.imr.memfree.limit 0
+resetprop -n persist.sys.mmms.switch false
 
 # ---------------------------------------------------------
 # BEGIN_OPTIMIZATIONS_IO
 # ---------------------------------------------------------
-# fs tune
+# Block queue readahead and request depth tuning
 for queue in /sys/block/*/queue; do
   device_name=$(basename "$(dirname "$queue")")
 
@@ -89,12 +88,8 @@ for queue in /sys/block/*/queue; do
   esac
 
   case "$device_name" in
-    mmcblk*)
-      write "$queue/read_ahead_kb" 512
-      write "$queue/nr_requests" 64
-      ;;
-    sd*)
-      write "$queue/read_ahead_kb" 512
+    mmcblk*|sd*)
+      write "$queue/read_ahead_kb" 256
       write "$queue/nr_requests" 64
       ;;
     *)
@@ -107,19 +102,38 @@ done
 # END_OPTIMIZATIONS_IO
 # ---------------------------------------------------------
 
-# setup tweaks
+# Ensure initial hardware configs exist
+if [ ! -f "$MODDIR/config/device.conf" ]; then
+  "$MODDIR/system/bin/perfmtk" -d >/dev/null 2>&1
+  "$MODDIR/system/bin/perfmtk" -g >/dev/null 2>&1
+fi
+
+# Apply current profile if configured
 current_profile=$(getprop sys.perfmtk.current_profile)
 if [ -n "$current_profile" ]; then
-    "$MODDIR/system/bin/perfmtk" "$current_profile"
+  "$MODDIR/system/bin/perfmtk" "$current_profile" >/dev/null 2>&1
 fi
 
+# Apply thermal state if configured
 thermal_state=$(getprop sys.perfmtk.thermal_state)
 if [ -n "$thermal_state" ]; then
-    "$MODDIR/system/bin/thermal_limit" "${thermal_state%?}"
+  "$MODDIR/system/bin/perfmtk" thermal "$thermal_state" >/dev/null 2>&1
 fi
 
-# Start daemon
-if [ -f "$MODDIR/perfmtk_daemon" ]; then
-  log -t PerfMTKDaemon "Starting Daemon"
-  "$MODDIR/perfmtk_daemon" &
+# Ensure perfmtk and thermal_limit are accessible in root PATH
+for bin_dir in /data/adb/ksu/bin /data/adb/ap/bin /data/adb/magisk; do
+  if [ -d "$bin_dir" ]; then
+    ln -sf "$MODDIR/system/bin/perfmtk" "$bin_dir/perfmtk" 2>/dev/null
+    ln -sf "$MODDIR/system/bin/thermal_limit" "$bin_dir/thermal_limit" 2>/dev/null
+  fi
+done
+
+# Single-instance watchdog: terminate previous instance if running
+killall perfmtkd 2>/dev/null
+sleep 0.5
+
+# Start native background daemon with persistent auto-recovery watchdog
+if [ -f "$MODDIR/perfmtkd" ]; then
+  log -t PerfMTK "Starting Native PerfMTK Daemon from $MODDIR/perfmtkd"
+  "$MODDIR/perfmtkd" &
 fi
