@@ -7,7 +7,10 @@ MODAUTH=$(grep_prop author "$TMPDIR/module.prop")
 # System information
 LANG=$(settings get system system_locales)
 BRAND=$(getprop ro.product.vendor.brand)
+[ -z "$BRAND" ] && BRAND=$(getprop ro.product.brand)
 SOC=$(getprop ro.board.platform)
+[ -z "$SOC" ] && SOC=$(getprop ro.hardware)
+[ -z "$SOC" ] && SOC=$(getprop ro.soc.model | tr '[:upper:]' '[:lower:]')
 
 # RAM information
 total_ram_kb=$(grep MemTotal /proc/meminfo | tr -cd '[:digit:]')
@@ -59,11 +62,24 @@ verify_requirements() {
       "Installation from Recovery is not supported."
   fi
 
-  # Verify SOC compatibility
-  if [[ $SOC != mt* ]]; then
+  # Verify SOC compatibility across diverse OEMs (Xiaomi, Samsung, Vivo, Oplus, Transsion, Moto)
+  local is_mtk=false
+  if [[ $SOC == mt* ]]; then
+    is_mtk=true
+  elif [[ $(getprop ro.hardware) == mt* ]]; then
+    SOC=$(getprop ro.hardware)
+    is_mtk=true
+  elif [[ $(getprop ro.soc.model | tr '[:upper:]' '[:lower:]') == mt* ]]; then
+    SOC=$(getprop ro.soc.model | tr '[:upper:]' '[:lower:]')
+    is_mtk=true
+  elif grep -qi "mediatek" /proc/cpuinfo 2>/dev/null || [[ $(getprop ro.soc.manufacturer) == *[Mm]ediatek* ]]; then
+    is_mtk=true
+  fi
+
+  if ! $is_mtk; then
     abort_install \
-      "[$SOC] no es compatible." \
-      "[$SOC] is not supported."
+      "[$SOC] no es compatible (Se requiere un SoC MediaTek)." \
+      "[$SOC] is not supported (A MediaTek SoC is required)."
   fi
 
   # Verify architecture
@@ -187,75 +203,121 @@ optimize_power_table() {
   fi
 }
 
-# Volume Key Selector
+# Installation Mode Selector
+choose_install_mode() {
+  local delay=10
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  if [[ $LANG == es* ]]; then
+    ui_print "       Modo de Instalación        "
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print " [⚡] Modo Express (Recomendado):"
+    ui_print "     Instalación óptima automática."
+    ui_print "     (Por defecto al agotarse el tiempo)"
+    ui_print " "
+    ui_print " [🛠️] Modo Personalizado:"
+    ui_print "     Presiona [VOL+] para elegir componentes."
+    ui_print "     O presiona [VOL-] para iniciar Express ya."
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print "  ⏳ Esperando selección (${delay}s)..."
+  else
+    ui_print "        Installation Mode         "
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print " [⚡] Express Mode (Recommended):"
+    ui_print "     Full optimal automatic install."
+    ui_print "     (Default when timer expires)"
+    ui_print " "
+    ui_print " [🛠️] Custom Mode:"
+    ui_print "     Press [VOL+] to select components."
+    ui_print "     Or press [VOL-] to start Express now."
+    ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    ui_print "  ⏳ Waiting for selection (${delay}s)..."
+  fi
+
+  local custom_mode=false
+  local manual_express=false
+  local remaining=$delay
+
+  while [ "$remaining" -gt 0 ]; do
+    timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
+    if grep -q 'KEY_VOLUMEUP.*DOWN' $TMPDIR/events; then
+      custom_mode=true
+      break
+    elif grep -q 'KEY_VOLUMEDOWN.*DOWN' $TMPDIR/events; then
+      manual_express=true
+      break
+    fi
+
+    remaining=$((remaining - 1))
+  done
+
+  # Pause to avoid key bounce and let user release key
+  sleep 0.4
+
+  if $custom_mode; then
+    print_sel "Modo Personalizado activado [VOL+]" "Custom Mode activated [VOL+]"
+    return 1
+  elif $manual_express; then
+    print_sel "Modo Express activado [VOL-]" "Express Mode activated [VOL-]"
+    return 0
+  else
+    print_sel "Modo Express activado por defecto (Óptimo)" "Express Mode activated by default (Optimal)"
+    return 0
+  fi
+}
+
+# Volume Key Selector (used in Custom Mode)
 select_option() {
   local key="$1"
-  local delay="${2:-5}"
+  local delay="${2:-10}"
 
-  local title="" opt1="" desc1="" opt2="" desc2="" msg_waiting=""
+  local title="" opt1="" desc1="" opt2="" desc2=""
 
   if [[ $LANG == es* ]]; then
-    msg_waiting="⏳ Esperando selección..."
     case "$key" in
       system.prop)
         title="Configuración de system.prop"
         opt1="Ajustes completos"
-        desc1="Incluye optimizaciones de rendimiento"
+        desc1="Incluye optimizaciones de render y memoria"
         opt2="Ajustes esenciales"
-        desc2="Solo configuración básica para estabilidad"
+        desc2="Solo configuración base para estabilidad"
         ;;
       post-fs-data.sh)
         title="Instalación de post-fs-data.sh"
         opt1="Instalar script"
-        desc1="Aplica optimizaciones al inicio (puede causar bootloop)"
+        desc1="Aplica optimizaciones tempranas de kernel y cpusets"
         opt2="No instalar script"
-        desc2="Omitir (recomendado si hay problemas de estabilidad)"
+        desc2="Omitir post-fs-data"
         ;;
       service.sh)
         title="Configuración de service.sh"
         opt1="Ajustes completos"
-        desc1="Optimizaciones adicionales tras el arranque"
+        desc1="Optimizaciones de I/O y arranque de servicios"
         opt2="Ajustes esenciales"
-        desc2="Solo ajustes básicos para estabilidad"
-        ;;
-      daemon)
-        title="PerfMTK Daemon"
-        opt1="Instalar Daemon"
-        desc1="Configura perfiles específicos por aplicación"
-        opt2="No instalar Daemon"
-        desc2="Omitir esta función"
+        desc2="Solo arranque esencial del daemon"
         ;;
     esac
   else
-    msg_waiting="⏳ Waiting for selection..."
     case "$key" in
       system.prop)
         title="system.prop Configuration"
         opt1="Complete settings"
-        desc1="Includes performance optimizations"
+        desc1="Includes rendering and memory optimizations"
         opt2="Essential settings only"
-        desc2="Only basic configuration for stability"
+        desc2="Basic configuration for stability"
         ;;
       post-fs-data.sh)
         title="post-fs-data.sh Installation"
         opt1="Install script"
-        desc1="Applies optimizations at startup (may cause bootloop)"
+        desc1="Applies early kernel and cpuset optimizations"
         opt2="Don't install script"
-        desc2="Skip (recommended if stability issues arise)"
+        desc2="Skip post-fs-data"
         ;;
       service.sh)
         title="service.sh Configuration"
         opt1="Complete settings"
-        desc1="Additional optimizations after boot"
+        desc1="I/O tweaks and service startup"
         opt2="Essential settings only"
-        desc2="Only basic adjustments for stability"
-        ;;
-      daemon)
-        title="PerfMTK Daemon"
-        opt1="Install Daemon"
-        desc1="Allows configuring specific profiles per application"
-        opt2="Don't install Daemon"
-        desc2="Skip this feature"
+        desc2="Only essential daemon launch"
         ;;
     esac
   fi
@@ -269,49 +331,46 @@ select_option() {
   ui_print ""
   ui_print "[2] ⬇️  VOL- : $opt2"
   ui_print "    $desc2"
-  ui_print ""
-  ui_print "$msg_waiting (${delay}s)"
-  ui_print ""
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  if [[ $LANG == es* ]]; then
+    ui_print "  ⏳ Esperando selección (${delay}s)..."
+  else
+    ui_print "  ⏳ Waiting for selection (${delay}s)..."
+  fi
 
-  # Try getevent first
-  local deadline=$(( $(date +%s) + delay ))
+  local remaining=$delay
+  local chosen=0
 
-  while [ "$(date +%s)" -lt "$deadline" ]; do
+  while [ "$remaining" -gt 0 ]; do
     timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
-    if grep -q 'KEY_VOLUMEUP *DOWN' $TMPDIR/events; then
-      print_sel "Opción 1 seleccionada" "Option 1 selected"
-      return 0
-    elif grep -q 'KEY_VOLUMEDOWN *DOWN' $TMPDIR/events; then
-      print_sel "Opción 2 seleccionada" "Option 2 selected"
-      return 1
+    if grep -q 'KEY_VOLUMEUP.*DOWN' $TMPDIR/events; then
+      chosen=1
+      break
+    elif grep -q 'KEY_VOLUMEDOWN.*DOWN' $TMPDIR/events; then
+      chosen=2
+      break
     fi
+
+    remaining=$((remaining - 1))
   done
 
-  # Fallback to keycheck if getevent fails
-  log_info \
-    "Usando método alternativo de detección de teclas..." \
-    "Using alternative key detection method..."
+  # Pause to avoid key bounce and let user release key
+  sleep 0.4
 
-  timeout 0 "$MODPATH/common/$ABI/keycheck"
-  timeout "$delay" "$MODPATH/common/$ABI/keycheck"
-  local sel=$?
-
-  if [ $sel -eq 42 ]; then
-    print_sel "Opción 1 seleccionada" "Option 1 selected"
+  if [ "$chosen" -eq 1 ]; then
+    print_sel "Opción 1 seleccionada [VOL+]" "Option 1 selected [VOL+]"
     return 0
-  elif [ $sel -eq 41 ]; then
-    print_sel "Opción 2 seleccionada" "Option 2 selected"
+  elif [ "$chosen" -eq 2 ]; then
+    print_sel "Opción 2 seleccionada [VOL-]" "Option 2 selected [VOL-]"
     return 1
   else
-    abort_install \
-      "No se detectó ninguna tecla de volumen." \
-      "No volume key detected."
+    print_sel "Sin tecla detectada. Usando opción por defecto [1]..." "No key detected. Using default option [1]..."
+    return 0
   fi
 }
 
 # Backup existing configuration
 backup_config() {
-  local config_dir="$MODPATH/config"
   local backup_dir="/data/adb/perfmtk_backup"
 
   if [ -d "/data/adb/modules/perfmtk/config" ]; then
@@ -321,6 +380,12 @@ backup_config() {
 
     mkdir -p "$backup_dir"
     cp -r /data/adb/modules/perfmtk/config/* "$backup_dir/" 2>/dev/null || true
+  fi
+
+  # Preserve legacy app_profiles.conf if exists
+  if [ -f "/data/local/app_profiles.conf" ] && [ ! -f "$backup_dir/app_profiles.conf" ]; then
+    mkdir -p "$backup_dir"
+    cp "/data/local/app_profiles.conf" "$backup_dir/app_profiles.conf" 2>/dev/null || true
   fi
 }
 
@@ -342,6 +407,11 @@ restore_config() {
       "Configuración restaurada exitosamente" \
       "Configuration restored successfully"
   fi
+
+  # Maintain compatibility link for app_profiles
+  if [ -f "$config_dir/app_profiles.conf" ]; then
+    ln -sf "$config_dir/app_profiles.conf" /data/local/app_profiles.conf 2>/dev/null || true
+  fi
 }
 
 # Install module files
@@ -356,10 +426,14 @@ install_module() {
       "Error extracting files from ZIP."
   fi
 
-  chmod -R 0755 "$MODPATH/common"
+  # Determine installation mode: Express (default) vs Custom
+  local is_express=true
+  if ! choose_install_mode; then
+    is_express=false
+  fi
 
   # --- system.prop ---
-  if select_option system.prop 10; then
+  if $is_express || select_option system.prop 10; then
     log_info \
       "Aplicando configuración completa de system.prop..." \
       "Applying complete system.prop configuration..."
@@ -372,10 +446,8 @@ install_module() {
     set_mod_config "$MODPATH/system.prop"
   fi
 
-  sleep 0.8
-
   # --- post-fs-data.sh ---
-  if select_option post-fs-data.sh 10; then
+  if $is_express || select_option post-fs-data.sh 10; then
     log_info \
       "Instalando post-fs-data.sh..." \
       "Installing post-fs-data.sh..."
@@ -386,10 +458,8 @@ install_module() {
     rm -f "$MODPATH/post-fs-data.sh"
   fi
 
-  sleep 0.8
-
   # --- service.sh ---
-  if select_option service.sh 10; then
+  if $is_express || select_option service.sh 10; then
     log_info \
       "Aplicando configuración completa de service.sh..." \
       "Applying complete service.sh configuration..."
@@ -401,55 +471,55 @@ install_module() {
     sed -i '/# BEGIN_OPTIMIZATIONS_IO/,/# END_OPTIMIZATIONS_IO/d'   "$MODPATH/service.sh"
   fi
 
-  sleep 0.8
+  # --- Daemon & CLI Binaries ---
+  log_info \
+    "Instalando binarios nativos ($ABI)..." \
+    "Installing native binaries ($ABI)..."
 
-  # --- daemon ---
-  if select_option daemon 10; then
-    log_info \
-      "Instalando PerfMTK Daemon..." \
-      "Installing PerfMTK Daemon..."
-    mv "$MODPATH/common/$ABI/perfmtk_daemon" "$MODPATH/perfmtk_daemon"
-    if [ ! -f "/data/local/app_profiles.conf" ]; then
-      mv "$MODPATH/app_profiles.conf" "/data/local/app_profiles.conf"
-    else
-      rm -f "$MODPATH/app_profiles.conf"
-    fi
-  else
-    log_info \
-      "Omitiendo PerfMTK Daemon..." \
-      "Skipping PerfMTK Daemon..."
-    rm -f "$MODPATH/common/$ABI/perfmtk_daemon"
-    rm -f "$MODPATH/app_profiles.conf"
+  # Daemon: perfmtkd placed in module root
+  if [ -f "$MODPATH/common/$ABI/perfmtkd" ]; then
+    mv "$MODPATH/common/$ABI/perfmtkd" "$MODPATH/perfmtkd"
   fi
 
-  sleep 0.8
+  # CLI: perfmtk placed in system/bin
+  mkdir -p "$MODPATH/system/bin"
+  if [ -f "$MODPATH/common/$ABI/perfmtk" ]; then
+    mv "$MODPATH/common/$ABI/perfmtk" "$MODPATH/system/bin/perfmtk"
+  fi
 
-  # --- Main binaries ---
-  log_info \
-    "Instalando binarios principales..." \
-    "Installing main binaries..."
-  mv "$MODPATH/common/$ABI/perfmtk"       "$MODPATH/system/bin/perfmtk"
-  mv "$MODPATH/common/$ABI/thermal_limit" "$MODPATH/system/bin/thermal_limit"
+  # Compatibility wrapper for thermal_limit forwarding directly to perfmtk
+  cat << 'EOF' > "$MODPATH/system/bin/thermal_limit"
+#!/system/bin/sh
+
+exec perfmtk thermal "$@"
+EOF
+
+  # Ensure config folder structure
+  mkdir -p "$MODPATH/config"
+  if [ -f "$MODPATH/app_profiles.conf" ]; then
+    mv "$MODPATH/app_profiles.conf" "$MODPATH/config/app_profiles.conf"
+  fi
 
   # --- MediaTek Power Table Optimization ---
   optimize_power_table
 
-  log_info \
-    "Configurando archivos del modulo..." \
-    "Configuring module files..."
-
-  # Cleanup
+  # Cleanup common architectures directory
   rm -rf "$MODPATH/common"
 
-  sleep 0.8
-
-  # --- Permissions ---
+  # Permissions
   set_perm_recursive "$MODPATH"            0 0    0755 0644
   set_perm_recursive "$MODPATH/system/bin" 0 2000 0755 0755
-
-  if [ -f "$MODPATH/perfmtk_daemon" ]; then
-    set_perm "$MODPATH/perfmtk_daemon" 0 0 0755
+  if [ -f "$MODPATH/perfmtkd" ]; then
+    set_perm "$MODPATH/perfmtkd" 0 0 0755
   fi
+
+  # Ensure perfmtk and thermal_limit are immediately available in root PATH
+  for bin_dir in /data/adb/ksu/bin /data/adb/ap/bin /data/adb/magisk; do
+    if [ -d "$bin_dir" ]; then
+      ln -sf "$MODPATH/system/bin/perfmtk" "$bin_dir/perfmtk" 2>/dev/null
+      ln -sf "$MODPATH/system/bin/thermal_limit" "$bin_dir/thermal_limit" 2>/dev/null
+    fi
+  done
 }
 
 # Print module banner
@@ -480,12 +550,37 @@ log_info \
   "Desbloquea todo el potencial de tu $(toupper $BRAND)" \
   "Unlock the full potential of your $(toupper $BRAND)"
 
-sleep 0.3
+sleep 1
 
 backup_config
 install_module
 restore_config
 
-log_info \
-  "¡Instalación completada! Reinicia para aplicar los cambios." \
-  "Installation completed! Reboot to apply changes."
+# Generate initial configs if fresh install
+if [ ! -f "$MODPATH/config/device.conf" ]; then
+  log_info \
+    "Generando configuraciones iniciales del hardware..." \
+    "Generating initial hardware configurations..."
+  mkdir -p "$MODPATH/config"
+  "$MODPATH/system/bin/perfmtk" -d >/dev/null 2>&1 || true
+  "$MODPATH/system/bin/perfmtk" -g >/dev/null 2>&1 || true
+  if [ -d "/data/adb/modules/perfmtk/config" ] && [ "$MODPATH" != "/data/adb/modules/perfmtk" ]; then
+    cp -r /data/adb/modules/perfmtk/config/* "$MODPATH/config/" 2>/dev/null || true
+  fi
+fi
+
+ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+if [[ $LANG == es* ]]; then
+  ui_print "    ✓ ¡Instalación Completada!    "
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  ui_print " • Daemon : perfmtkd (activo al reiniciar)"
+  ui_print " • CLI    : escribe 'su -c perfmtk' en Termux"
+  ui_print " • Reinicia el teléfono para aplicar."
+else
+  ui_print "   ✓ Installation Completed!      "
+  ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  ui_print " • Daemon : perfmtkd (ready on boot)"
+  ui_print " • CLI    : run 'su -c perfmtk' in Termux"
+  ui_print " • Reboot your device to apply."
+fi
+ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
