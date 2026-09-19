@@ -1,5 +1,12 @@
-allow system_server su unix_stream_socket connectto
-allow system_server su unix_stream_socket { read write }
+# PerfMTK SELinux rules for UNIX domain abstract sockets (@perfmtkd_ctrl, @fg_monitor_socket)
 
-allow system_server ksu unix_stream_socket connectto
-allow system_server ksu unix_stream_socket { read write }
+# system_server connection to su / ksu daemons
+allow system_server su unix_stream_socket { connectto read write }
+allow system_server ksu unix_stream_socket { connectto read write }
+
+# User apps & PerfMTK WebUI / Manager Apps
+allow untrusted_app su unix_stream_socket { connectto read write }
+allow untrusted_app ksu unix_stream_socket { connectto read write }
+
+allow untrusted_app_all su unix_stream_socket { connectto read write }
+allow untrusted_app_all ksu unix_stream_socket { connectto read write }
