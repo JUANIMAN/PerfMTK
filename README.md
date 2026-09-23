@@ -4,7 +4,7 @@
 
 [![GitHub Downloads](https://img.shields.io/github/downloads/JUANIMAN/PerfMTK/total)](https://github.com/JUANIMAN/PerfMTK/releases)
 [![Join the Telegram group](https://img.shields.io/badge/PerfMTK%20Telegram%20group-blue?style=flat-square&logo=telegram)](https://t.me/PerfMTK_chat)
-[![Current Version](https://img.shields.io/badge/version-v16.2-success?style=flat-square)](https://github.com/JUANIMAN/PerfMTK/releases/latest)
+[![Current Version](https://img.shields.io/badge/version-v16.3-success?style=flat-square)](https://github.com/JUANIMAN/PerfMTK/releases/latest)
 
 ## Overview
 
