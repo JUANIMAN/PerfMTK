@@ -76,6 +76,9 @@ resetprop -n persist.sys.mms.use_integrated_memory_reclaim false
 resetprop -n persist.sys.imr.memfree.limit 0
 resetprop -n persist.sys.mmms.switch false
 
+# Override SurfaceFlinger default game frame rate cap to 120 FPS
+resetprop -n ro.surface_flinger.game_default_frame_rate_override 120
+
 # ---------------------------------------------------------
 # BEGIN_OPTIMIZATIONS_IO
 # ---------------------------------------------------------

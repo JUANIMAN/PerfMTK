@@ -4,8 +4,9 @@ ro.opengles.version=196610
 # GPU
 ro.gfx.driver.0=
 
-# SurfaceFlinger Tracing
+# SurfaceFlinger
 debug.sf.enable_transaction_tracing=false
+ro.surface_flinger.game_default_frame_rate_override=120
 
 # LMK
 sys.lmk.reportkills=0
