@@ -7,6 +7,8 @@ ro.gfx.driver.0=
 # SurfaceFlinger
 debug.sf.enable_transaction_tracing=false
 ro.surface_flinger.game_default_frame_rate_override=120
+debug.sf.use_phase_offsets_as_durations=1
+ro.surface_flinger.set_touch_timer_ms=200
 
 # LMK
 sys.lmk.reportkills=0
