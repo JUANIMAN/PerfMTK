@@ -1,15 +1,8 @@
 # Changelog
 
-## v16.3
+## v16.4
 
-* **Universal Dynamic Hardware Detection**:
-  * Dynamic CPU core control.
-  * Dynamic Big-core affinity mask calculation for any topology (4+3+1, 4+4, 6+2, 2+6, 8+4, 3+3+2, 8, 4).
-  * Dynamic display resolution detection.
-  * Full dynamic support for `"auto"` directives across all configuration templates.
-  
-* **Other changes**:
-  * Refined RenderBooster
-  * SurfaceFlinger Game Frame Rate Unlock
-  * Automated ThermalService Status Override
-  * GPU DVFS Dual Frequency Bounds & Legacy `gpufreq` Support
+- Apps assigned to `powersave` or `powersave+` profiles now receive a 2000 ms grace period in balanced mode with active UCLAMP top-app boost during startup.
+- Direct `package:PID` atomic socket delivery from `system_server` to the native daemon.
+- Tuned SurfaceFlinger phase offsets and touch timers via `system.prop` to eliminate frame pacing jitter.
+- Cleaned up legacy installer routines in `customize.sh`, delegating full control to the native C engine.
