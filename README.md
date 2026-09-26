@@ -4,7 +4,7 @@
 
 [![GitHub Downloads](https://img.shields.io/github/downloads/JUANIMAN/PerfMTK/total)](https://github.com/JUANIMAN/PerfMTK/releases)
 [![Join the Telegram group](https://img.shields.io/badge/PerfMTK%20Telegram%20group-blue?style=flat-square&logo=telegram)](https://t.me/PerfMTK_chat)
-[![Current Version](https://img.shields.io/badge/version-v16.3-success?style=flat-square)](https://github.com/JUANIMAN/PerfMTK/releases/latest)
+[![Current Version](https://img.shields.io/badge/version-v16.4-success?style=flat-square)](https://github.com/JUANIMAN/PerfMTK/releases/latest)
 
 ## Overview
 
@@ -24,11 +24,12 @@ With sub-millisecond profile transitions, an event-driven `epoll` reactor (< 3.0
   * In-memory configuration caching for sub-millisecond hardware switching latency.
   * 4-tier foreground app detection: LSPosed hook (`PerfMTK-Hook`), Netlink Process Connector (`cn_proc`), kernel `cgroup.procs` inotify, and adaptive debounced fallback.
 * **Hardware Touch & Digitizer Booster**:
-  * Native kernel-level touch sampling rate unlock (480Hz / 2160Hz) via direct digitizer `ioctl` (`/dev/xiaomi-touch`, `/proc/touchpanel`, `/sys/class/touch/touch_dev`, Samsung TSP).
+  * Native kernel-level touch sampling rate unlock (sustained 480Hz/500Hz) via direct digitizer `ioctl` (`/dev/xiaomi-touch`, `/proc/touchpanel`, `/sys/class/touch/touch_dev`, Samsung TSP).
   * Host-side `THP Smooth` filter integration to eliminate gesture jitter.
   * Touch input IRQs and dispatchers kept unpinned to Little cores, preventing frame preemption on Big cores and ensuring rock-solid **120 FPS** in AAA games (PUBG Mobile, Wuthering Waves, Genshin Impact).
 * **Smart Fast Charge Bypass & Battery Care**:
   * Dedicated gaming thermal bypass: charges at full speed without thermal throttle, keeping battery cells cool (31°C - 36°C even under sustained 120 FPS gaming loads).
+  * Universal hardware capability probing: strictly distinguishes between genuine PMIC hardware bypass (Infinix, Samsung, Asus, Sony) and input suspension, preventing unintended battery discharge during gaming.
   * Automated battery safety guard with configurable emergency cutoff (45°C - 55°C, default 52°C).
   * **Battery Care** engine: configurable charge ceiling (50% - 100%, default 80%) to maximize lithium cell health over years.
   * Instant access via Android Quick Settings Tiles.
@@ -76,7 +77,7 @@ With sub-millisecond profile transitions, an event-driven `epoll` reactor (< 3.0
 The native daemon automatically switches profiles when apps enter the foreground:
 
 1. *(Optional but Recommended)* Install the [LSPosed framework](https://github.com/JingMatrix/LSPosed).
-2. Install the **PerfMTK-Hook** companion app.
+2. Install the [PerfMTK-Hook](https://www.opendesktop.org/p/1670559/) companion app.
 3. Enable **PerfMTK-Hook** inside the LSPosed manager.
 4. If LSPosed is not used, the daemon will seamlessly and automatically fall back to its internal kernel Netlink process connector and cgroup inotify engine with zero configuration required!
 
