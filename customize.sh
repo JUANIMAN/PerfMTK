@@ -178,31 +178,6 @@ set_mod_config() {
   replace_property "sys.perfmtk.thermal_state"   "${current_thermal:-enabled}" "$1"
 }
 
-# Function to analyze, clone and modify MediaTek's powerscntbl.xml
-optimize_power_table() {
-  local src_file="/vendor/etc/powerscntbl.xml"
-  [ ! -f "$src_file" ] && src_file="/system/vendor/etc/powerscntbl.xml"
-  
-  local dest_dir="$MODPATH/system/vendor/etc"
-  local dest_file="$dest_dir/powerscntbl.xml"
-
-  if [ -f "$src_file" ]; then
-    if grep -q 'powerhint="MTKPOWER_HINT_UX_SCROLLING_COMMON"' "$src_file"; then
-      log_info \
-        "Removiendo rate limits restrictivos en powerscntbl.xml..." \
-        "Removing restrictive rate limits in powerscntbl.xml..."
-
-      mkdir -p "$dest_dir"
-      cp "$src_file" "$dest_file"
-
-      sed -i '/powerhint="MTKPOWER_HINT_UX_SCROLLING_COMMON"/,/<\/scenario>/ {
-        /^[[:space:]]*<data cmd="PERF_RES_SCHED_UTIL_UP_RATE_LIMIT_US_CLUSTER_/d;
-        /^[[:space:]]*<data cmd="PERF_RES_SCHED_UTIL_DOWN_RATE_LIMIT_US_CLUSTER_/d;
-      }' "$dest_file"
-    fi
-  fi
-}
-
 # Installation Mode Selector
 choose_install_mode() {
   local delay=10
@@ -499,9 +474,6 @@ EOF
   if [ -f "$MODPATH/app_profiles.conf" ]; then
     mv "$MODPATH/app_profiles.conf" "$MODPATH/config/app_profiles.conf"
   fi
-
-  # --- MediaTek Power Table Optimization ---
-  optimize_power_table
 
   # Cleanup common architectures directory
   rm -rf "$MODPATH/common"
