@@ -76,8 +76,21 @@ resetprop -n persist.sys.mms.use_integrated_memory_reclaim false
 resetprop -n persist.sys.imr.memfree.limit 0
 resetprop -n persist.sys.mmms.switch false
 
-# Override SurfaceFlinger default game frame rate cap to 120 FPS
-resetprop -n ro.surface_flinger.game_default_frame_rate_override 120
+# Detect display maximum refresh rate dynamically (supports 60Hz, 90Hz, 120Hz, 144Hz+)
+max_fps=$(dumpsys SurfaceFlinger --display-modes 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?fps' | sed 's/fps//' | sort -n | tail -n 1 | cut -d'.' -f1)
+if [ -z "$max_fps" ] || [ "$max_fps" -lt 60 ]; then
+  peak_val=$(settings get system peak_refresh_rate 2>/dev/null | cut -d'.' -f1)
+  if [ -n "$peak_val" ] && [ "$peak_val" -ge 60 ]; then
+    max_fps="$peak_val"
+  else
+    max_fps=60
+  fi
+fi
+
+# Override SurfaceFlinger default game frame rate cap matching panel capabilities (>= 90 FPS)
+if [ "$max_fps" -ge 90 ]; then
+  resetprop -n ro.surface_flinger.game_default_frame_rate_override "$max_fps"
+fi
 
 # ---------------------------------------------------------
 # BEGIN_OPTIMIZATIONS_IO
