@@ -77,7 +77,13 @@ resetprop -n persist.sys.imr.memfree.limit 0
 resetprop -n persist.sys.mmms.switch false
 
 # Detect display maximum refresh rate dynamically (supports 60Hz, 90Hz, 120Hz, 144Hz+)
-max_fps=$(dumpsys SurfaceFlinger --display-modes 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?fps' | sed 's/fps//' | sort -n | tail -n 1 | cut -d'.' -f1)
+max_fps=$(dumpsys SurfaceFlinger --display-modes 2>/dev/null | grep -oE '(vsyncRate=|renderRate=)[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -n 1)
+if [ -z "$max_fps" ] || [ "$max_fps" -lt 60 ]; then
+  max_fps=$(dumpsys SurfaceFlinger --display-modes 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?fps' | sed 's/fps//' | sort -n | tail -n 1 | cut -d'.' -f1)
+fi
+if [ -z "$max_fps" ] || [ "$max_fps" -lt 60 ]; then
+  max_fps=$(dumpsys display 2>/dev/null | grep -oE 'fps=[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -n 1)
+fi
 if [ -z "$max_fps" ] || [ "$max_fps" -lt 60 ]; then
   peak_val=$(settings get system peak_refresh_rate 2>/dev/null | cut -d'.' -f1)
   if [ -n "$peak_val" ] && [ "$peak_val" -ge 60 ]; then
