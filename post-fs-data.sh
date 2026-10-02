@@ -72,3 +72,22 @@ write /sys/kernel/mm/swap/vma_ra_enabled true
 # Scheduler PELT ramp/decay acceleration and RT uclamp baseline
 write /proc/sys/kernel/sched_pelt_multiplier 4
 write /proc/sys/kernel/sched_util_clamp_min_rt_default 0
+
+# Low-latency TCP & network socket optimization
+write /proc/sys/net/ipv4/tcp_fastopen 3
+write /proc/sys/net/ipv4/tcp_autocorking 0
+write /proc/sys/net/ipv4/tcp_low_latency 1
+write /proc/sys/net/ipv4/tcp_tw_reuse 1
+write /proc/sys/net/core/netdev_max_backlog 5000
+
+# HyperOS Display & Idle Refresh Rate Vendor Overrides (Option B)
+resetprop_bin="resetprop"
+[ -f /data/adb/ksu/bin/resetprop ] && resetprop_bin="/data/adb/ksu/bin/resetprop"
+[ -f /data/adb/ap/bin/resetprop ] && resetprop_bin="/data/adb/ap/bin/resetprop"
+[ -f /data/adb/magisk/resetprop ] && resetprop_bin="/data/adb/magisk/resetprop"
+
+$resetprop_bin -n ro.vendor.disable_idle_fps.threshold 1 2>/dev/null
+$resetprop_bin -n persist.vendor.disable_idle_fps.threshold 1 2>/dev/null
+$resetprop_bin -n persist.vendor.disable_idle_fps 0 2>/dev/null
+$resetprop_bin -n debug.sf.set_touch_timer_ms 1000 2>/dev/null
+$resetprop_bin -n ro.surface_flinger.set_touch_timer_ms 1000 2>/dev/null
