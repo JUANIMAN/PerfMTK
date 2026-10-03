@@ -11,6 +11,14 @@ debug.sf.set_touch_timer_ms=1000
 ro.vendor.disable_idle_fps.threshold=1
 persist.vendor.disable_idle_fps.threshold=1
 persist.vendor.disable_idle_fps=0
+debug.sf.high_fps.earlyGl.app.duration=6000000
+debug.sf.high_fps.earlyGl.sf.duration=6000000
+debug.sf.high_fps.early.app.duration=6000000
+debug.sf.high_fps.early.sf.duration=6000000
+debug.sf.high_fps.late.app.duration=6000000
+debug.sf.high_fps.late.sf.duration=6000000
+debug.sf.hwc.min.duration=1000000
+ro.surface_flinger.max_frame_buffer_acquired_buffers=3
 
 # LMK
 sys.lmk.reportkills=0
