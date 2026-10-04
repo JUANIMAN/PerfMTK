@@ -17,6 +17,8 @@ ro.surface_flinger.max_frame_buffer_acquired_buffers=3
 # LMK
 sys.lmk.reportkills=0
 persist.sys.lmk.reportkills=false
+sys.lmk.minfree_levels=8192:0,10240:100,12288:200,14336:250,40960:900,61440:950
+ro.lmk.psi_partial_stall_ms=250
 
 # LOW RAM
 ro.config.low_ram=
