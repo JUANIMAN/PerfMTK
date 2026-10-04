@@ -26,33 +26,56 @@ write() {
 }
 
 # Update cpus for cpuset cgroups based on CPU topology
-if [ -d /sys/devices/system/cpu/cpufreq/policy7 ]; then
-  # Tri-cluster (4 Little + 3 Mid + 1 Prime, e.g. Dimensity 8300 / 8200 / 9200)
-  write /dev/cpuset/foreground/cpus 0-7
-  write /dev/cpuset/foreground/boost/cpus 4-7
-  write /dev/cpuset/background/cpus 0-3
-  write /dev/cpuset/system-background/cpus 0-3
-  write /dev/cpuset/top-app/cpus 0-7
-  write /dev/cpuset/top-app/boost/cpus 4-7
-  write /dev/cpuset/ui/cpus 4-7
-elif [ -d /sys/devices/system/cpu/cpufreq/policy6 ]; then
-  # Dual-cluster 6+2 (6 Little + 2 Big, e.g. Helio G85 / G90T / G99)
-  write /dev/cpuset/foreground/cpus 0-7
-  write /dev/cpuset/foreground/boost/cpus 6-7
-  write /dev/cpuset/background/cpus 0-5
-  write /dev/cpuset/system-background/cpus 0-5
-  write /dev/cpuset/top-app/cpus 0-7
-  write /dev/cpuset/top-app/boost/cpus 6-7
-  write /dev/cpuset/ui/cpus 6-7
+total_cpus=$(ls -d /sys/devices/system/cpu/cpu[0-9]* 2>/dev/null | wc -l)
+[ -z "$total_cpus" ] || [ "$total_cpus" -le 0 ] && total_cpus=8
+all_cpus="0-$((total_cpus - 1))"
+
+if [ "$total_cpus" -ge 8 ]; then
+  if [ -d /sys/devices/system/cpu/cpufreq/policy7 ]; then
+    # Tri-cluster (4 Little + 3 Mid + 1 Prime, e.g. Dimensity 8300 / 8200 / 9200)
+    write /dev/cpuset/foreground/cpus 0-7
+    write /dev/cpuset/foreground/boost/cpus 4-7
+    write /dev/cpuset/background/cpus 0-3
+    write /dev/cpuset/system-background/cpus 0-3
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/top-app/boost/cpus 4-7
+    write /dev/cpuset/ui/cpus 4-7
+  elif [ -d /sys/devices/system/cpu/cpufreq/policy6 ]; then
+    # Dual-cluster 6+2 (6 Little + 2 Big, e.g. Helio G85 / G90T / G99)
+    write /dev/cpuset/foreground/cpus 0-7
+    write /dev/cpuset/foreground/boost/cpus 6-7
+    write /dev/cpuset/background/cpus 0-5
+    write /dev/cpuset/system-background/cpus 0-5
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/top-app/boost/cpus 6-7
+    write /dev/cpuset/ui/cpus 6-7
+  else
+    # Dual-cluster 4+4 (4 Little + 4 Big, e.g. Dimensity 8400 / 9400)
+    write /dev/cpuset/foreground/cpus 0-7
+    write /dev/cpuset/foreground/boost/cpus 4-7
+    write /dev/cpuset/background/cpus 0-3
+    write /dev/cpuset/system-background/cpus 0-3
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/top-app/boost/cpus 4-7
+    write /dev/cpuset/ui/cpus 4-7
+  fi
+elif [ "$total_cpus" -gt 4 ]; then
+  half_core=$((total_cpus / 2))
+  write /dev/cpuset/foreground/cpus "$all_cpus"
+  write /dev/cpuset/foreground/boost/cpus "$half_core-$((total_cpus - 1))"
+  write /dev/cpuset/background/cpus "0-$((half_core - 1))"
+  write /dev/cpuset/system-background/cpus "0-$((half_core - 1))"
+  write /dev/cpuset/top-app/cpus "$all_cpus"
+  write /dev/cpuset/top-app/boost/cpus "$half_core-$((total_cpus - 1))"
+  write /dev/cpuset/ui/cpus "$half_core-$((total_cpus - 1))"
 else
-  # Dual-cluster 4+4 (4 Little + 4 Big, e.g. Dimensity 8400 / 9400)
-  write /dev/cpuset/foreground/cpus 0-7
-  write /dev/cpuset/foreground/boost/cpus 4-7
-  write /dev/cpuset/background/cpus 0-3
-  write /dev/cpuset/system-background/cpus 0-3
-  write /dev/cpuset/top-app/cpus 0-7
-  write /dev/cpuset/top-app/boost/cpus 4-7
-  write /dev/cpuset/ui/cpus 4-7
+  write /dev/cpuset/foreground/cpus "$all_cpus"
+  write /dev/cpuset/foreground/boost/cpus "2-$((total_cpus - 1))"
+  write /dev/cpuset/background/cpus "0-1"
+  write /dev/cpuset/system-background/cpus "0-1"
+  write /dev/cpuset/top-app/cpus "$all_cpus"
+  write /dev/cpuset/top-app/boost/cpus "$all_cpus"
+  write /dev/cpuset/ui/cpus "$all_cpus"
 fi
 
 # Disable compaction proactiveness to eliminate background compaction stalls
