@@ -32,10 +32,9 @@ With sub-millisecond profile transitions, an event-driven `epoll` reactor (< 3.0
   * Universal hardware capability probing: strictly distinguishes between genuine PMIC hardware bypass (Infinix, Samsung, Asus, Sony) and input suspension, preventing unintended battery discharge during gaming.
   * Automated battery safety guard with configurable emergency cutoff (45°C - 55°C, default 52°C).
   * **Battery Care** engine: configurable charge ceiling (50% - 100%, default 80%) to maximize lithium cell health over years.
-  * Instant access via Android Quick Settings Tiles.
-* **Predictive Thermal Guardian**:
-  * Proactive thermal slope algorithm ($\Delta T / \Delta t$) that detects rapid temperature rises before hardware throttling kicks in.
-  * Smooth, graduated frequency and uclamp steps that eliminate the infamous "sawtooth" throttling stutter.
+* **Sensor & IMU Latency Booster**:
+  * Isolated Sensor HAL and Xiaomi CIT Sensor to dedicated Little VIP cores (Cores 2-3) with nice -10 priority.
+  * MediaTek SCP mailbox IRQ steering to eliminate gyroscope and touch jitter during high-load gaming.
 * **Advanced MediaTek Hardware Knobs**:
   * **DRAM DVFSRC LPDDR5X**: Direct memory bus scaling with clocks up to 8533 MHz for memory-intensive titles.
   * **Mali GPU & GED HAL**: Dynamic frequency scaling and margin tuning for modern 5.x and 6.x kernels (`dvfs_margin_value`, `gpu_boost_level`).
@@ -136,13 +135,6 @@ su -c perfmtk --charge-bypass reset   # Revert manual override to active profile
 su -c perfmtk --battery-care on 80    # Enable charge limiter at 80%
 su -c perfmtk --battery-care off       # Disable charge limiter
 su -c perfmtk --battery-care status   # Query Battery Care state
-```
-
-### Predictive Thermal Guardian
-```bash
-su -c perfmtk --tg on 75 2            # Enable Guardian (Target 75°C, max 2 clamp steps)
-su -c perfmtk --tg off                # Disable Guardian
-su -c perfmtk --tg status             # Query current thermal slope and clamp level
 ```
 
 ### OEM Thermal Management
