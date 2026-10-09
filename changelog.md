@@ -1,9 +1,11 @@
 # Changelog
 
-## v16.5
+## v17.0
 
-- Fully dynamic, universal hardware probing and profile generation: eliminated all device-specific hardcodes, dynamically detecting OPP frequencies, cluster topologies, and CPU governor policies across any MediaTek platform.
-- Main UI thread RenderBooster integration: pins and elevates the application's main thread alongside render threads to Big/Prime cores for stutter-free frame generation.
-- Dynamic panel refresh rate probing: automatically detects max display refresh rate and clamps target frame rates appropriately for 60Hz, 90Hz, 120Hz, and 144Hz panels.
-- Standardized balanced profile generation: optimized baseline frequencies and EAS energy-efficiency sweet spots.
-- Dynamic game frame rate adaptation: eliminated fixed phase offset overrides in favor of adaptive SurfaceFlinger sync.
+- New MediaTek DVFSRC Hardware Interconnect Driver.
+- Next-Gen RenderBooster.
+- Advanced MediaTek FSTB & FPSGO Quantile Pacing.
+- Complete Purge of Legacy Thermal Guardian.
+- 67W / 120W Fast Charge Unthrottling & Smart Bypass.
+- Linux VM, zRAM & Storage Pipeline Overhaul.
+- Dynamic Display Refresh Rate & SurfaceFlinger Phase Synchronization.
