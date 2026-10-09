@@ -87,8 +87,8 @@ write /proc/sys/vm/watermark_boost_factor 0
 # Multi-Gen LRU (MGLRU)
 write /sys/kernel/mm/lru_gen/enabled y
 
-# zRAM tuning (page-cluster 3 and vma_ra_enabled true for fast batch decompression)
-write /proc/sys/vm/page-cluster 3
+# zRAM tuning (page-cluster 0 for zero-latency single-page compressed swap and vma_ra_enabled true)
+write /proc/sys/vm/page-cluster 0
 write /proc/sys/vm/swappiness 100
 write /sys/kernel/mm/swap/vma_ra_enabled true
 

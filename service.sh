@@ -142,11 +142,10 @@ if [ -n "$thermal_state" ]; then
   "$MODDIR/system/bin/perfmtk" thermal "$thermal_state" >/dev/null 2>&1
 fi
 
-# Ensure perfmtk and thermal_limit are accessible in root PATH
+# Ensure perfmtk CLI is accessible in root PATH
 for bin_dir in /data/adb/ksu/bin /data/adb/ap/bin /data/adb/magisk; do
   if [ -d "$bin_dir" ]; then
     ln -sf "$MODDIR/system/bin/perfmtk" "$bin_dir/perfmtk" 2>/dev/null
-    ln -sf "$MODDIR/system/bin/thermal_limit" "$bin_dir/thermal_limit" 2>/dev/null
   fi
 done
 
