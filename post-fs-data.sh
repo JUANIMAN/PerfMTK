@@ -92,8 +92,8 @@ write /proc/sys/vm/page-cluster 0
 write /proc/sys/vm/swappiness 100
 write /sys/kernel/mm/swap/vma_ra_enabled true
 
-# Scheduler PELT ramp/decay acceleration and RT uclamp baseline
-write /proc/sys/kernel/sched_pelt_multiplier 4
+# Preserved stock OEM PELT multiplier (HyperOS 2 defaults to 4, left untouched)
+# write /proc/sys/kernel/sched_pelt_multiplier 4
 write /proc/sys/kernel/sched_util_clamp_min_rt_default 0
 
 # Low-latency TCP & network socket optimization
