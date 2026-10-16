@@ -154,7 +154,14 @@ killall perfmtkd 2>/dev/null
 sleep 0.5
 
 # Start native background daemon with persistent auto-recovery watchdog
-if [ -f "$MODDIR/perfmtkd" ]; then
-  log -t PerfMTK "Starting Native PerfMTK Daemon from $MODDIR/perfmtkd"
-  "$MODDIR/perfmtkd" &
+DAEMON_BIN=""
+if [ -f "$MODDIR/system/bin/perfmtkd" ]; then
+  DAEMON_BIN="$MODDIR/system/bin/perfmtkd"
+elif [ -f "$MODDIR/perfmtkd" ]; then
+  DAEMON_BIN="$MODDIR/perfmtkd"
+fi
+
+if [ -n "$DAEMON_BIN" ]; then
+  log -t PerfMTK "Starting Native PerfMTK Daemon from $DAEMON_BIN"
+  "$DAEMON_BIN" &
 fi
