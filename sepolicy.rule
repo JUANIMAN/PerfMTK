@@ -1,12 +1,23 @@
-# PerfMTK SELinux rules for UNIX domain abstract sockets (@perfmtkd_ctrl, @fg_monitor_socket)
+# PerfMTK SELinux rules for UNIX domain abstract sockets (@perfmtkd_ctrl, @fg_monitor_socket) & Zero-Copy SHM (memfd)
 
-# system_server connection to su / ksu daemons
-allow system_server su unix_stream_socket { connectto read write }
-allow system_server ksu unix_stream_socket { connectto read write }
+# system_server connection to su / ksu / magisk daemons
+allow system_server su unix_stream_socket { connectto read write getattr getopt }
+allow system_server ksu unix_stream_socket { connectto read write getattr getopt }
+allow system_server magisk unix_stream_socket { connectto read write getattr getopt }
 
-# User apps & PerfMTK WebUI / Manager Apps
-allow untrusted_app su unix_stream_socket { connectto read write }
-allow untrusted_app ksu unix_stream_socket { connectto read write }
+# User apps & PerfMTK WebUI / Manager Apps socket & SCM_RIGHTS fd passing
+allow untrusted_app su unix_stream_socket { connectto read write getattr getopt }
+allow untrusted_app ksu unix_stream_socket { connectto read write getattr getopt }
+allow untrusted_app magisk unix_stream_socket { connectto read write getattr getopt }
+allow untrusted_app su fd use
+allow untrusted_app ksu fd use
+allow untrusted_app magisk fd use
+allow untrusted_app tmpfs file { read getattr map }
 
-allow untrusted_app_all su unix_stream_socket { connectto read write }
-allow untrusted_app_all ksu unix_stream_socket { connectto read write }
+allow untrusted_app_all su unix_stream_socket { connectto read write getattr getopt }
+allow untrusted_app_all ksu unix_stream_socket { connectto read write getattr getopt }
+allow untrusted_app_all magisk unix_stream_socket { connectto read write getattr getopt }
+allow untrusted_app_all su fd use
+allow untrusted_app_all ksu fd use
+allow untrusted_app_all magisk fd use
+allow untrusted_app_all tmpfs file { read getattr map }
