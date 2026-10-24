@@ -451,13 +451,14 @@ install_module() {
     "Instalando binarios nativos ($ABI)..." \
     "Installing native binaries ($ABI)..."
 
-  # Daemon: perfmtkd placed in module root
+  # CLI & Daemon placed in system/bin (with module-root symlink for backwards compatibility)
+  mkdir -p "$MODPATH/system/bin"
   if [ -f "$MODPATH/common/$ABI/perfmtkd" ]; then
-    mv "$MODPATH/common/$ABI/perfmtkd" "$MODPATH/perfmtkd"
+    mv "$MODPATH/common/$ABI/perfmtkd" "$MODPATH/system/bin/perfmtkd"
+    ln -sf "/data/adb/modules/perfmtk/system/bin/perfmtkd" "$MODPATH/perfmtkd" 2>/dev/null || \
+      cp -f "$MODPATH/system/bin/perfmtkd" "$MODPATH/perfmtkd"
   fi
 
-  # CLI: perfmtk placed in system/bin
-  mkdir -p "$MODPATH/system/bin"
   if [ -f "$MODPATH/common/$ABI/perfmtk" ]; then
     mv "$MODPATH/common/$ABI/perfmtk" "$MODPATH/system/bin/perfmtk"
   fi
@@ -481,7 +482,10 @@ EOF
   # Permissions
   set_perm_recursive "$MODPATH"            0 0    0755 0644
   set_perm_recursive "$MODPATH/system/bin" 0 2000 0755 0755
-  if [ -f "$MODPATH/perfmtkd" ]; then
+  if [ -f "$MODPATH/system/bin/perfmtkd" ]; then
+    set_perm "$MODPATH/system/bin/perfmtkd" 0 0 0755
+  fi
+  if [ -f "$MODPATH/perfmtkd" ] && [ ! -L "$MODPATH/perfmtkd" ]; then
     set_perm "$MODPATH/perfmtkd" 0 0 0755
   fi
 

@@ -130,18 +130,6 @@ if [ ! -f "$MODDIR/config/device.conf" ]; then
   "$MODDIR/system/bin/perfmtk" -g >/dev/null 2>&1
 fi
 
-# Apply current profile if configured
-current_profile=$(getprop sys.perfmtk.current_profile)
-if [ -n "$current_profile" ]; then
-  "$MODDIR/system/bin/perfmtk" "$current_profile" >/dev/null 2>&1
-fi
-
-# Apply thermal state if configured
-thermal_state=$(getprop sys.perfmtk.thermal_state)
-if [ -n "$thermal_state" ]; then
-  "$MODDIR/system/bin/perfmtk" thermal "$thermal_state" >/dev/null 2>&1
-fi
-
 # Ensure perfmtk CLI is accessible in root PATH
 for bin_dir in /data/adb/ksu/bin /data/adb/ap/bin /data/adb/magisk; do
   if [ -d "$bin_dir" ]; then
@@ -151,9 +139,9 @@ done
 
 # Single-instance watchdog: terminate previous instance if running
 killall perfmtkd 2>/dev/null
-sleep 0.5
+sleep 0.3
 
-# Start native background daemon with persistent auto-recovery watchdog
+# Start native background daemon first (automatically initializes drivers & applies default_profile)
 DAEMON_BIN=""
 if [ -f "$MODDIR/system/bin/perfmtkd" ]; then
   DAEMON_BIN="$MODDIR/system/bin/perfmtkd"
@@ -164,4 +152,12 @@ fi
 if [ -n "$DAEMON_BIN" ]; then
   log -t PerfMTK "Starting Native PerfMTK Daemon from $DAEMON_BIN"
   "$DAEMON_BIN" &
+  sleep 0.5
 fi
+
+# Apply persisted thermal state via IPC if explicitly disabled
+thermal_state=$(getprop sys.perfmtk.thermal_state)
+if [ "$thermal_state" = "disabled" ]; then
+  "$MODDIR/system/bin/perfmtk" thermal disabled >/dev/null 2>&1
+fi
+
