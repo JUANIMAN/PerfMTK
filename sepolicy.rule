@@ -21,3 +21,10 @@ allow untrusted_app_all su fd use
 allow untrusted_app_all ksu fd use
 allow untrusted_app_all magisk fd use
 allow untrusted_app_all tmpfs file { read getattr map }
+
+# SurfaceFlinger hardware acceleration & MediaTek PerfMgr ioctls
+allow surfaceflinger proc_perfmgr file { ioctl read write open getattr }
+allow surfaceflinger proc_perfmgr dir { search read open getattr }
+allow surfaceflinger mcd_data_file dir { search read open getattr }
+allow surfaceflinger mcd_data_file file { read open getattr }
+
