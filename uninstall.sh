@@ -17,3 +17,18 @@ rm -f /dev/socket/perfmtkd.sock 2>/dev/null
 # Reset properties
 resetprop --delete sys.perfmtk.current_profile 2>/dev/null
 resetprop --delete sys.perfmtk.thermal_state 2>/dev/null
+resetprop --delete sys.perfmtk.display_fps 2>/dev/null
+for prop in \
+  persist.sys.mms.use_integrated_memory_reclaim \
+  persist.sys.imr.memfree.limit \
+  persist.sys.mmms.switch; do
+  resetprop -p -d "$prop" 2>/dev/null || true
+done
+rm -rf /data/adb/perfmtk_backup 2>/dev/null
+
+# Clean up PerfMTK PowerHAL overlay and shared gate
+if grep -q " /vendor/bin/hw overlay " /proc/mounts 2>/dev/null; then
+  umount /vendor/bin/hw 2>/dev/null || umount -l /vendor/bin/hw 2>/dev/null || true
+fi
+rm -f /data/vendor/powerhal/.perfmtk_gate
+rm -rf /dev/.perfmtk_pwr

@@ -71,75 +71,34 @@ fi
 # Wait for boot completion
 resetprop -w sys.boot_completed 0
 
-# Disable HyperOS aggressive IMR / MMMS background app killer
-resetprop -n persist.sys.mms.use_integrated_memory_reclaim false
-resetprop -n persist.sys.imr.memfree.limit 0
-resetprop -n persist.sys.mmms.switch false
-
-# Detect display maximum refresh rate dynamically (supports 60Hz, 90Hz, 120Hz, 144Hz+)
-max_fps=$(dumpsys SurfaceFlinger --display-modes 2>/dev/null | grep -oE '(vsyncRate=|renderRate=)[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -n 1)
-if [ -z "$max_fps" ] || [ "$max_fps" -lt 60 ]; then
-  max_fps=$(dumpsys SurfaceFlinger --display-modes 2>/dev/null | grep -oE '[0-9]+(\.[0-9]+)?fps' | sed 's/fps//' | sort -n | tail -n 1 | cut -d'.' -f1)
-fi
-if [ -z "$max_fps" ] || [ "$max_fps" -lt 60 ]; then
-  max_fps=$(dumpsys display 2>/dev/null | grep -oE 'fps=[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -n 1)
-fi
-if [ -z "$max_fps" ] || [ "$max_fps" -lt 60 ]; then
-  peak_val=$(settings get system peak_refresh_rate 2>/dev/null | cut -d'.' -f1)
-  if [ -n "$peak_val" ] && [ "$peak_val" -ge 60 ]; then
-    max_fps="$peak_val"
-  else
-    max_fps=60
-  fi
-fi
-
-# Override SurfaceFlinger default game frame rate cap matching panel capabilities (>= 90 FPS)
-if [ "$max_fps" -ge 90 ]; then
-  resetprop -n ro.surface_flinger.game_default_frame_rate_override "$max_fps"
-fi
-
-# ---------------------------------------------------------
-# BEGIN_OPTIMIZATIONS_IO
-# ---------------------------------------------------------
-# Block queue readahead and request depth tuning
-for queue in /sys/block/*/queue; do
-  device_name=$(basename "$(dirname "$queue")")
-
-  case "$device_name" in
-    loop*|ram*|zram*) continue ;;
-  esac
-
-  case "$device_name" in
-    mmcblk*|sd*)
-      write "$queue/read_ahead_kb" 256
-      write "$queue/nr_requests" 64
-      ;;
-    *)
-      write "$queue/read_ahead_kb" 128
-      write "$queue/nr_requests" 128
-      ;;
-  esac
-done
-# ---------------------------------------------------------
-# END_OPTIMIZATIONS_IO
-# ---------------------------------------------------------
-
-# Ensure initial hardware configs exist
-if [ ! -f "$MODDIR/config/device.conf" ]; then
+# Ensure initial hardware configs exist and are non-corrupt
+if [ ! -s "$MODDIR/config/device.conf" ] || ! grep -q "POLICY_0_PATH" "$MODDIR/config/device.conf" 2>/dev/null; then
   "$MODDIR/system/bin/perfmtk" -d >/dev/null 2>&1
   "$MODDIR/system/bin/perfmtk" -g >/dev/null 2>&1
 fi
 
-# Ensure perfmtk CLI is accessible in root PATH
+# Ensure perfmtk & thermal_limit CLI symlinks are accessible in root PATH
 for bin_dir in /data/adb/ksu/bin /data/adb/ap/bin /data/adb/magisk; do
   if [ -d "$bin_dir" ]; then
     ln -sf "$MODDIR/system/bin/perfmtk" "$bin_dir/perfmtk" 2>/dev/null
+    [ -f "$MODDIR/system/bin/thermal_limit" ] && \
+      ln -sf "$MODDIR/system/bin/thermal_limit" "$bin_dir/thermal_limit" 2>/dev/null
   fi
 done
 
-# Single-instance watchdog: terminate previous instance if running
-killall perfmtkd 2>/dev/null
-sleep 0.3
+# Single-instance watchdog: terminate previous instance cleanly and wait for exit
+if pidof perfmtkd >/dev/null 2>&1; then
+  killall perfmtkd 2>/dev/null
+  waited=0
+  while pidof perfmtkd >/dev/null 2>&1 && [ "$waited" -lt 30 ]; do
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+  if pidof perfmtkd >/dev/null 2>&1; then
+    pkill -9 perfmtkd 2>/dev/null
+    sleep 0.2
+  fi
+fi
 
 # Start native background daemon first (automatically initializes drivers & applies default_profile)
 DAEMON_BIN=""
@@ -151,13 +110,17 @@ fi
 
 if [ -n "$DAEMON_BIN" ]; then
   log -t PerfMTK "Starting Native PerfMTK Daemon from $DAEMON_BIN"
-  "$DAEMON_BIN" &
-  sleep 0.5
+  "$DAEMON_BIN" >/dev/null 2>&1 &
 fi
 
 # Apply persisted thermal state via IPC if explicitly disabled
 thermal_state=$(getprop sys.perfmtk.thermal_state)
 if [ "$thermal_state" = "disabled" ]; then
+  waited=0
+  while ! "$MODDIR/system/bin/perfmtk" -s >/dev/null 2>&1 && [ "$waited" -lt 30 ]; do
+    sleep 0.1
+    waited=$((waited + 1))
+  done
   "$MODDIR/system/bin/perfmtk" thermal disabled >/dev/null 2>&1
 fi
 
