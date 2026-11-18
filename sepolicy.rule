@@ -5,15 +5,8 @@ allow system_server su unix_stream_socket { connectto read write getattr getopt 
 allow system_server ksu unix_stream_socket { connectto read write getattr getopt }
 allow system_server magisk unix_stream_socket { connectto read write getattr getopt }
 
-# User apps & PerfMTK WebUI / Manager Apps socket & SCM_RIGHTS fd passing
-allow untrusted_app su unix_stream_socket { connectto read write getattr getopt }
-allow untrusted_app ksu unix_stream_socket { connectto read write getattr getopt }
-allow untrusted_app magisk unix_stream_socket { connectto read write getattr getopt }
-allow untrusted_app su fd use
-allow untrusted_app ksu fd use
-allow untrusted_app magisk fd use
-allow untrusted_app tmpfs file { read getattr map }
-
+# User apps & PerfMTK Manager / Telemetry socket & SCM_RIGHTS fd passing
+# Note: @perfmtkd_ctrl enforces per-command privilege checks via SO_PEERCRED
 allow untrusted_app_all su unix_stream_socket { connectto read write getattr getopt }
 allow untrusted_app_all ksu unix_stream_socket { connectto read write getattr getopt }
 allow untrusted_app_all magisk unix_stream_socket { connectto read write getattr getopt }
@@ -28,3 +21,11 @@ allow surfaceflinger proc_perfmgr dir { search read open getattr }
 allow surfaceflinger mcd_data_file dir { search read open getattr }
 allow surfaceflinger mcd_data_file file { read open getattr }
 
+# PerfMTK PowerHAL LD_PRELOAD hook & shared binary gate permissions
+allow mtk_hal_power vendor_file dir { read open getattr search }
+allow mtk_hal_power vendor_file file { read open getattr map execute execute_no_trans }
+allow mtk_hal_power mtk_hal_power_exec file { execute execute_no_trans read open getattr map }
+allow mtk_hal_power mtk_powerhal_data_file dir { read open getattr search }
+allow mtk_hal_power mtk_powerhal_data_file file { read open getattr map }
+allow mtk_hal_power vendor_data_file dir { read open getattr search }
+allow mtk_hal_power vendor_data_file file { read open getattr map }
