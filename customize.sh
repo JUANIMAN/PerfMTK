@@ -98,7 +98,7 @@ verify_requirements() {
     "Total RAM: ${total_ram_mb} MB"
 }
 
-# Function to replace a property in system.prop
+# Function to replace (or uncomment/append) a property in system.prop
 replace_property() {
   local property="$1"
   local value="$2"
@@ -110,10 +110,16 @@ replace_property() {
       "File $file not found."
   fi
 
-  if ! sed -i "s/$property=.*/$property=$value/g" "$file"; then
-    abort_install \
-      "Error al modificar $property en $file." \
-      "Error modifying $property in $file."
+  if grep -qE "^[#[:space:]]*$property=" "$file" 2>/dev/null; then
+    if ! sed -i "s|^[#[:space:]]*$property=.*|$property=$value|g" "$file"; then
+      abort_install \
+        "Error al modificar $property en $file." \
+        "Error modifying $property in $file."
+    fi
+  else
+    printf "\n%s=%s\n" "$property" "$value" >> "$file" || abort_install \
+      "Error al agregar $property en $file." \
+      "Error appending $property to $file."
   fi
 }
 
@@ -178,6 +184,64 @@ set_mod_config() {
   replace_property "sys.perfmtk.thermal_state"   "${current_thermal:-enabled}" "$1"
 }
 
+# Helper for volume key polling loops
+wait_volume_key() {
+  local delay="${1:-10}"
+  local ev_file="$TMPDIR/events"
+  : > "$ev_file"
+
+  local vol_devs
+  vol_devs=$(/system/bin/getevent -lp 2>/dev/null | awk '
+    /^add device/ { dev=$NF }
+    /KEY_VOLUME(UP|DOWN)/ { if (dev != "" && !seen[dev]++) print dev }
+  ')
+
+  if [ -z "$vol_devs" ]; then
+    local end_ts=$(( $(date +%s) + delay ))
+    while [ "$(date +%s)" -lt "$end_ts" ]; do
+      timeout 1 /system/bin/getevent -lqc 1 >"$ev_file" 2>&1
+      if grep -q 'KEY_VOLUMEUP.*DOWN' "$ev_file"; then
+        return 1
+      elif grep -q 'KEY_VOLUMEDOWN.*DOWN' "$ev_file"; then
+        return 2
+      fi
+    done
+    return 0
+  fi
+
+  local pids=""
+  local dev
+  for dev in $vol_devs; do
+    (
+      while :; do
+        /system/bin/getevent -lqc 1 "$dev" >>"$ev_file" 2>/dev/null || break
+      done
+    ) &
+    pids="$pids $!"
+  done
+
+  local rc=0
+  local end_ts=$(( $(date +%s) + delay ))
+  while [ "$(date +%s)" -lt "$end_ts" ]; do
+    if grep -q 'KEY_VOLUMEUP.*DOWN' "$ev_file" 2>/dev/null; then
+      rc=1
+      break
+    elif grep -q 'KEY_VOLUMEDOWN.*DOWN' "$ev_file" 2>/dev/null; then
+      rc=2
+      break
+    fi
+    sleep 0.1
+  done
+
+  local p
+  for p in $pids; do
+    pkill -P "$p" 2>/dev/null
+    kill "$p" 2>/dev/null
+  done
+  wait $pids 2>/dev/null
+  return "$rc"
+}
+
 # Installation Mode Selector
 choose_install_mode() {
   local delay=10
@@ -210,20 +274,12 @@ choose_install_mode() {
 
   local custom_mode=false
   local manual_express=false
-  local remaining=$delay
-
-  while [ "$remaining" -gt 0 ]; do
-    timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
-    if grep -q 'KEY_VOLUMEUP.*DOWN' $TMPDIR/events; then
-      custom_mode=true
-      break
-    elif grep -q 'KEY_VOLUMEDOWN.*DOWN' $TMPDIR/events; then
-      manual_express=true
-      break
-    fi
-
-    remaining=$((remaining - 1))
-  done
+  
+  wait_volume_key "$delay"
+  case "$?" in
+    1) custom_mode=true ;;
+    2) manual_express=true ;;
+  esac
 
   # Pause to avoid key bounce and let user release key
   sleep 0.4
@@ -259,14 +315,14 @@ select_option() {
       post-fs-data.sh)
         title="Instalación de post-fs-data.sh"
         opt1="Instalar script"
-        desc1="Aplica optimizaciones tempranas de kernel y cpusets"
+        desc1="Aplica optimizaciones tempranas de VM, red y PowerHook"
         opt2="No instalar script"
         desc2="Omitir post-fs-data"
         ;;
       service.sh)
         title="Configuración de service.sh"
         opt1="Ajustes completos"
-        desc1="Optimizaciones de I/O y arranque de servicios"
+        desc1="Tweaks de PPM legacy y arranque del daemon"
         opt2="Ajustes esenciales"
         desc2="Solo arranque esencial del daemon"
         ;;
@@ -283,14 +339,14 @@ select_option() {
       post-fs-data.sh)
         title="post-fs-data.sh Installation"
         opt1="Install script"
-        desc1="Applies early kernel and cpuset optimizations"
+        desc1="Applies early VM, network and PowerHook optimizations"
         opt2="Don't install script"
         desc2="Skip post-fs-data"
         ;;
       service.sh)
         title="service.sh Configuration"
         opt1="Complete settings"
-        desc1="I/O tweaks and service startup"
+        desc1="Legacy PPM tweaks and daemon startup"
         opt2="Essential settings only"
         desc2="Only essential daemon launch"
         ;;
@@ -313,21 +369,9 @@ select_option() {
     ui_print "  ⏳ Waiting for selection (${delay}s)..."
   fi
 
-  local remaining=$delay
   local chosen=0
-
-  while [ "$remaining" -gt 0 ]; do
-    timeout 1 /system/bin/getevent -lqc 1 >$TMPDIR/events 2>&1
-    if grep -q 'KEY_VOLUMEUP.*DOWN' $TMPDIR/events; then
-      chosen=1
-      break
-    elif grep -q 'KEY_VOLUMEDOWN.*DOWN' $TMPDIR/events; then
-      chosen=2
-      break
-    fi
-
-    remaining=$((remaining - 1))
-  done
+  wait_volume_key "$delay"
+  chosen="$?"
 
   # Pause to avoid key bounce and let user release key
   sleep 0.4
@@ -344,48 +388,44 @@ select_option() {
   fi
 }
 
-# Backup existing configuration
-backup_config() {
-  local backup_dir="/data/adb/perfmtk_backup"
-
-  if [ -d "/data/adb/modules/perfmtk/config" ]; then
-    log_info \
-      "Respaldando configuración existente..." \
-      "Backing up existing configuration..."
-
-    mkdir -p "$backup_dir"
-    cp -r /data/adb/modules/perfmtk/config/* "$backup_dir/" 2>/dev/null || true
-  fi
-
-  # Preserve legacy app_profiles.conf if exists
-  if [ -f "/data/local/app_profiles.conf" ] && [ ! -f "$backup_dir/app_profiles.conf" ]; then
-    mkdir -p "$backup_dir"
-    cp "/data/local/app_profiles.conf" "$backup_dir/app_profiles.conf" 2>/dev/null || true
-  fi
-}
-
 # Restore configuration
 restore_config() {
   local config_dir="$MODPATH/config"
-  local backup_dir="/data/adb/perfmtk_backup"
+  local live_config="/data/adb/modules/perfmtk/config"
 
-  if [ -d "$backup_dir" ]; then
+  if [ -d "$live_config" ]; then
     log_info \
       "Restaurando configuración anterior..." \
       "Restoring previous configuration..."
 
     mkdir -p "$config_dir"
-    cp -r "$backup_dir"/* "$config_dir/" 2>/dev/null || true
-    rm -rf "$backup_dir"
 
-    log_info \
-      "Configuración restaurada exitosamente" \
-      "Configuration restored successfully"
+    if cp -af "$live_config/." "$config_dir/" 2>/dev/null; then
+      log_info \
+        "Configuración restaurada exitosamente" \
+        "Configuration restored successfully"
+    fi
   fi
 
-  # Maintain compatibility link for app_profiles
-  if [ -f "$config_dir/app_profiles.conf" ]; then
-    ln -sf "$config_dir/app_profiles.conf" /data/local/app_profiles.conf 2>/dev/null || true
+  # Migrate unmodified legacy 8GB performance VM defaults (50/60/1000/80) to empirically tuned values (5/20/2000/50)
+  if [ "${total_ram_mb:-0}" -gt 0 ] && [ "$total_ram_mb" -le 8192 ]; then
+    for perf_conf in "$config_dir/profiles/performance.conf" "$config_dir/performance.conf"; do
+      if [ -f "$perf_conf" ] && \
+         grep -q '^SWAPPINESS=50$' "$perf_conf" 2>/dev/null && \
+         grep -q '^WATERMARK_SCALE_FACTOR=60$' "$perf_conf" 2>/dev/null && \
+         grep -q '^MGLRU_MIN_TTL_MS=1000$' "$perf_conf" 2>/dev/null && \
+         grep -q '^VFS_CACHE_PRESSURE=80$' "$perf_conf" 2>/dev/null; then
+        sed -i \
+          -e 's/^SWAPPINESS=50$/SWAPPINESS=5/' \
+          -e 's/^WATERMARK_SCALE_FACTOR=60$/WATERMARK_SCALE_FACTOR=20/' \
+          -e 's/^MGLRU_MIN_TTL_MS=1000$/MGLRU_MIN_TTL_MS=2000/' \
+          -e 's/^VFS_CACHE_PRESSURE=80$/VFS_CACHE_PRESSURE=50/' \
+          "$perf_conf" 2>/dev/null || true
+        log_info \
+          "Migrando ajustes VM de performance a valores empíricos óptimos (5/20/2000/50)..." \
+          "Migrating performance VM preset to empirically optimal values (5/20/2000/50)..."
+      fi
+    done
   fi
 }
 
@@ -417,7 +457,7 @@ install_module() {
     log_info \
       "Aplicando configuración esencial de system.prop..." \
       "Applying essential system.prop configuration..."
-    sed -i '1,/# PerfXT config/d' "$MODPATH/system.prop"
+    sed -i '1,/# PerfMTK Config/d' "$MODPATH/system.prop"
     set_mod_config "$MODPATH/system.prop"
   fi
 
@@ -428,9 +468,16 @@ install_module() {
       "Installing post-fs-data.sh..."
   else
     log_info \
-      "Omitiendo post-fs-data.sh..." \
-      "Skipping post-fs-data.sh..."
-    rm -f "$MODPATH/post-fs-data.sh"
+      "Omitiendo tweaks tempranos (solo manteniendo PowerHook overlay)..." \
+      "Skipping early kernel tweaks (keeping PowerHook overlay only)..."
+    cat << 'EOF' > "$MODPATH/post-fs-data.sh"
+#!/system/bin/sh
+MODDIR=${0%/*}
+
+if [ -f "$MODDIR/powerhook-setup.sh" ]; then
+  sh "$MODDIR/powerhook-setup.sh" mount 2>/dev/null || true
+fi
+EOF
   fi
 
   # --- service.sh ---
@@ -443,7 +490,6 @@ install_module() {
       "Aplicando configuración esencial de service.sh..." \
       "Applying essential service.sh configuration..."
     sed -i '/# BEGIN_OPTIMIZATIONS_PPM/,/# END_OPTIMIZATIONS_PPM/d' "$MODPATH/service.sh"
-    sed -i '/# BEGIN_OPTIMIZATIONS_IO/,/# END_OPTIMIZATIONS_IO/d'   "$MODPATH/service.sh"
   fi
 
   # --- Daemon & CLI Binaries ---
@@ -455,7 +501,7 @@ install_module() {
   mkdir -p "$MODPATH/system/bin"
   if [ -f "$MODPATH/common/$ABI/perfmtkd" ]; then
     mv "$MODPATH/common/$ABI/perfmtkd" "$MODPATH/system/bin/perfmtkd"
-    ln -sf "/data/adb/modules/perfmtk/system/bin/perfmtkd" "$MODPATH/perfmtkd" 2>/dev/null || \
+    ln -sf "system/bin/perfmtkd" "$MODPATH/perfmtkd" 2>/dev/null || \
       cp -f "$MODPATH/system/bin/perfmtkd" "$MODPATH/perfmtkd"
   fi
 
@@ -467,7 +513,7 @@ install_module() {
   cat << 'EOF' > "$MODPATH/system/bin/thermal_limit"
 #!/system/bin/sh
 
-exec perfmtk thermal "$@"
+exec "${0%/*}/perfmtk" thermal "$@"
 EOF
 
   # Ensure config folder structure
@@ -477,24 +523,28 @@ EOF
   fi
 
   # Cleanup common architectures directory
+  if [ -f "$MODPATH/common/$ABI/perfmtk_powerwrap" ] && [ -f "$MODPATH/common/$ABI/libperfmtk_powerhook.so" ]; then
+    mv "$MODPATH/common/$ABI/perfmtk_powerwrap" "$MODPATH/perfmtk_powerwrap"
+    mv "$MODPATH/common/$ABI/libperfmtk_powerhook.so" "$MODPATH/libperfmtk_powerhook.so"
+  fi
+
   rm -rf "$MODPATH/common"
 
   # Permissions
   set_perm_recursive "$MODPATH"            0 0    0755 0644
   set_perm_recursive "$MODPATH/system/bin" 0 2000 0755 0755
-  if [ -f "$MODPATH/system/bin/perfmtkd" ]; then
-    set_perm "$MODPATH/system/bin/perfmtkd" 0 0 0755
-  fi
+  
+  [ -f "$MODPATH/powerhook-setup.sh" ] && set_perm "$MODPATH/powerhook-setup.sh" 0 2000 0755
+  [ -f "$MODPATH/perfmtk_powerwrap" ] && set_perm "$MODPATH/perfmtk_powerwrap" 0 2000 0755
   if [ -f "$MODPATH/perfmtkd" ] && [ ! -L "$MODPATH/perfmtkd" ]; then
-    set_perm "$MODPATH/perfmtkd" 0 0 0755
+    set_perm "$MODPATH/perfmtkd" 0 2000 0755
   fi
 
-  # Ensure perfmtk and thermal_limit are immediately available in root PATH
-  for bin_dir in /data/adb/ksu/bin /data/adb/ap/bin /data/adb/magisk; do
+  # Symlink perfmtk and thermal_limit in root PATH pointing to active module path
+  for bin_dir in /data/adb/ksu/bin /data/adb/ap/bin; do
     if [ -d "$bin_dir" ]; then
-      cp -f "$MODPATH/system/bin/perfmtk" "$bin_dir/perfmtk" 2>/dev/null || ln -sf "/data/adb/modules/perfmtk/system/bin/perfmtk" "$bin_dir/perfmtk" 2>/dev/null
-      cp -f "$MODPATH/system/bin/thermal_limit" "$bin_dir/thermal_limit" 2>/dev/null || ln -sf "/data/adb/modules/perfmtk/system/bin/thermal_limit" "$bin_dir/thermal_limit" 2>/dev/null
-      chmod 0755 "$bin_dir/perfmtk" "$bin_dir/thermal_limit" 2>/dev/null || true
+      ln -sf "/data/adb/modules/perfmtk/system/bin/perfmtk" "$bin_dir/perfmtk" 2>/dev/null || true
+      ln -sf "/data/adb/modules/perfmtk/system/bin/thermal_limit" "$bin_dir/thermal_limit" 2>/dev/null || true
     fi
   done
 }
@@ -529,22 +579,8 @@ log_info \
 
 sleep 1
 
-backup_config
 install_module
 restore_config
-
-# Generate initial configs if fresh install
-if [ ! -f "$MODPATH/config/device.conf" ]; then
-  log_info \
-    "Generando configuraciones iniciales del hardware..." \
-    "Generating initial hardware configurations..."
-  mkdir -p "$MODPATH/config"
-  "$MODPATH/system/bin/perfmtk" -d >/dev/null 2>&1 || true
-  "$MODPATH/system/bin/perfmtk" -g >/dev/null 2>&1 || true
-  if [ -d "/data/adb/modules/perfmtk/config" ] && [ "$MODPATH" != "/data/adb/modules/perfmtk" ]; then
-    cp -r /data/adb/modules/perfmtk/config/* "$MODPATH/config/" 2>/dev/null || true
-  fi
-fi
 
 ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if [[ $LANG == es* ]]; then

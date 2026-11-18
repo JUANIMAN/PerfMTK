@@ -2,35 +2,24 @@
 ro.opengles.version=196610
 
 # GPU
-ro.gfx.driver.0=
+# ro.gfx.driver.0=
 
-# SurfaceFlinger & HyperOS Display Overrides
+# SurfaceFlinger
 debug.sf.enable_transaction_tracing=false
-ro.surface_flinger.set_touch_timer_ms=1000
-debug.sf.set_touch_timer_ms=1000
-ro.vendor.disable_idle_fps.threshold=1
-persist.vendor.disable_idle_fps.threshold=1
-persist.vendor.disable_idle_fps=0
-debug.sf.hwc.min.duration=1000000
-ro.surface_flinger.max_frame_buffer_acquired_buffers=3
-
-# LMK
-sys.lmk.reportkills=0
-persist.sys.lmk.reportkills=false
 
 # LOW RAM
-ro.config.low_ram=
+# ro.config.low_ram=
 
 # DALVIK
-dalvik.vm.usap_pool_enabled=
-dalvik.vm.usap_pool_size_max=
-dalvik.vm.heapstartsize=
-dalvik.vm.heapmaxfree=
-dalvik.vm.dex2oat-Xmx=
+# dalvik.vm.usap_pool_enabled=
+# dalvik.vm.usap_pool_size_max=
+# dalvik.vm.heapstartsize=
+# dalvik.vm.heapmaxfree=
+# dalvik.vm.dex2oat-Xmx=
 
-# PerfXT config
-sys.perfmtk.current_profile=
-sys.perfmtk.thermal_state=
+# PerfMTK Config
+sys.perfmtk.current_profile=balanced
+sys.perfmtk.thermal_state=enabled
 
 # HyperOS / MIUI Memory Killer Disabler
 persist.sys.mms.use_integrated_memory_reclaim=false
