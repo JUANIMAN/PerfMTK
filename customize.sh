@@ -16,9 +16,6 @@ SOC=$(getprop ro.board.platform)
 total_ram_kb=$(grep MemTotal /proc/meminfo | tr -cd '[:digit:]')
 total_ram_mb=$((total_ram_kb / 1024))
 
-# GFX driver
-gfx_driver="com.mediatek.$SOC.gamedriver"
-
 # Current settings
 current_profile=$(getprop sys.perfmtk.current_profile)
 current_thermal=$(getprop sys.perfmtk.thermal_state)
@@ -171,7 +168,8 @@ configure_system_props() {
     replace_property "dalvik.vm.dex2oat-Xmx" "1024m" "$prop_file"
   fi
 
-  # Set graphics driver
+  # Set graphics driver (computed after verify_requirements resolves SOC fallbacks)
+  local gfx_driver="com.mediatek.$SOC.gamedriver"
   replace_property "ro.gfx.driver.0" "$gfx_driver" "$prop_file"
 
   # Set module configuration
@@ -407,11 +405,13 @@ restore_config() {
     fi
   fi
 
-  # Migrate unmodified legacy 8GB performance VM defaults (50/60/1000/80) to empirically tuned values (5/20/2000/50)
+  # Migrate unmodified 8GB performance VM presets to low-thrash gaming defaults (5/20/2000/50):
+  #   - older legacy preset:  50/60/1000/80
+  #   - transitional preset:  30/40/500/60
   if [ "${total_ram_mb:-0}" -gt 0 ] && [ "$total_ram_mb" -le 8192 ]; then
     for perf_conf in "$config_dir/profiles/performance.conf" "$config_dir/performance.conf"; do
-      if [ -f "$perf_conf" ] && \
-         grep -q '^SWAPPINESS=50$' "$perf_conf" 2>/dev/null && \
+      [ -f "$perf_conf" ] || continue
+      if grep -q '^SWAPPINESS=50$' "$perf_conf" 2>/dev/null && \
          grep -q '^WATERMARK_SCALE_FACTOR=60$' "$perf_conf" 2>/dev/null && \
          grep -q '^MGLRU_MIN_TTL_MS=1000$' "$perf_conf" 2>/dev/null && \
          grep -q '^VFS_CACHE_PRESSURE=80$' "$perf_conf" 2>/dev/null; then
@@ -422,8 +422,21 @@ restore_config() {
           -e 's/^VFS_CACHE_PRESSURE=80$/VFS_CACHE_PRESSURE=50/' \
           "$perf_conf" 2>/dev/null || true
         log_info \
-          "Migrando ajustes VM de performance a valores empíricos óptimos (5/20/2000/50)..." \
-          "Migrating performance VM preset to empirically optimal values (5/20/2000/50)..."
+          "Migrando ajustes VM de performance (preset legado) a valores gaming 8GB (5/20/2000/50)..." \
+          "Migrating legacy performance VM preset to 8GB gaming defaults (5/20/2000/50)..."
+      elif grep -q '^SWAPPINESS=30$' "$perf_conf" 2>/dev/null && \
+           grep -q '^WATERMARK_SCALE_FACTOR=40$' "$perf_conf" 2>/dev/null && \
+           grep -q '^MGLRU_MIN_TTL_MS=500$' "$perf_conf" 2>/dev/null && \
+           grep -q '^VFS_CACHE_PRESSURE=60$' "$perf_conf" 2>/dev/null; then
+        sed -i \
+          -e 's/^SWAPPINESS=30$/SWAPPINESS=5/' \
+          -e 's/^WATERMARK_SCALE_FACTOR=40$/WATERMARK_SCALE_FACTOR=20/' \
+          -e 's/^MGLRU_MIN_TTL_MS=500$/MGLRU_MIN_TTL_MS=2000/' \
+          -e 's/^VFS_CACHE_PRESSURE=60$/VFS_CACHE_PRESSURE=50/' \
+          "$perf_conf" 2>/dev/null || true
+        log_info \
+          "Migrando ajustes VM de performance a valores gaming 8GB (5/20/2000/50)..." \
+          "Migrating performance VM preset to 8GB gaming defaults (5/20/2000/50)..."
       fi
     done
   fi
