@@ -4,12 +4,10 @@
 MODDIR=${0%/*}
 
 TARGET_DIR="/vendor/bin/hw"
-# Ordered MediaTek PowerHAL candidates (AIDL first, then HIDL; Android 11-16).
+# MediaTek AIDL PowerHAL candidates (Android 14+).
 TARGET_CANDIDATES="
 vendor.mediatek.hardware.mtkpower-service.mediatek
 vendor.mediatek.hardware.mtkpower-service
-vendor.mediatek.hardware.mtkpower@1.0-service
-vendor.mediatek.hardware.mtkpower@1.0-service.mediatek
 "
 TARGET_NAME=""
 TARGET_BIN=""
@@ -84,6 +82,11 @@ read_selinux_ctx() {
 }
 
 mount_powerhook_overlay() {
+  # Guard: only mount on Android 14+ (SDK >= 34) with a tested AIDL PowerHAL binary.
+  local sdk
+  sdk="$(getprop ro.build.version.sdk 2>/dev/null | tr -cd '[:digit:]')"
+  [ -n "$sdk" ] && [ "$sdk" -ge 34 ] || return 0
+
   # Unmount any existing overlay first so we always read the pure underlying vendor binary.
   if is_overlay_mounted || has_any_orig_binary; then
     umount_powerhook_overlay

@@ -442,6 +442,37 @@ restore_config() {
   fi
 }
 
+# Check whether the device supports the PowerHook AIDL overlay (Android 14+ & matching ELF ABI)
+is_powerhook_compatible() {
+  local sdk
+  sdk=$(getprop ro.build.version.sdk 2>/dev/null | tr -cd '[:digit:]')
+  [ -n "$sdk" ] && [ "$sdk" -ge 34 ] || return 1
+
+  local bin="" cand
+  for cand in \
+    /vendor/bin/hw/vendor.mediatek.hardware.mtkpower-service.mediatek \
+    /vendor/bin/hw/vendor.mediatek.hardware.mtkpower-service; do
+    if [ -x "$cand" ]; then
+      bin="$cand"
+      break
+    fi
+  done
+  [ -n "$bin" ] || return 1
+
+  # Verify ELF bitness matches module ABI (02=64-bit arm64-v8a, 01=32-bit armeabi-v7a)
+  local elf_class
+  elf_class=$(od -An -tx1 -j4 -N1 "$bin" 2>/dev/null | tr -cd '0-9a-fA-F')
+  if [ -n "$elf_class" ]; then
+    case "$ABI" in
+      arm64-v8a)   [ "$elf_class" = "02" ] || return 1 ;;
+      armeabi-v7a) [ "$elf_class" = "01" ] || return 1 ;;
+      *)           return 1 ;;
+    esac
+  fi
+
+  return 0
+}
+
 # Install module files
 install_module() {
   log_info \
@@ -535,10 +566,20 @@ EOF
     mv "$MODPATH/app_profiles.conf" "$MODPATH/config/app_profiles.conf"
   fi
 
-  # Cleanup common architectures directory
-  if [ -f "$MODPATH/common/$ABI/perfmtk_powerwrap" ] && [ -f "$MODPATH/common/$ABI/libperfmtk_powerhook.so" ]; then
+  # Cleanup common architectures directory (only install PowerHook on verified Android 14+ AIDL PowerHAL)
+  if is_powerhook_compatible && \
+     [ -f "$MODPATH/common/$ABI/perfmtk_powerwrap" ] && \
+     [ -f "$MODPATH/common/$ABI/libperfmtk_powerhook.so" ]; then
     mv "$MODPATH/common/$ABI/perfmtk_powerwrap" "$MODPATH/perfmtk_powerwrap"
     mv "$MODPATH/common/$ABI/libperfmtk_powerhook.so" "$MODPATH/libperfmtk_powerhook.so"
+    log_info \
+      "PowerHook instalado (PowerHAL AIDL Android 14+ detectado)." \
+      "PowerHook installed (Android 14+ AIDL PowerHAL detected)."
+  else
+    rm -f "$MODPATH/powerhook-setup.sh" "$MODPATH/perfmtk_powerwrap" "$MODPATH/libperfmtk_powerhook.so"
+    log_info \
+      "PowerHook omitido (requiere Android 14+ con PowerHAL AIDL)." \
+      "PowerHook skipped (requires Android 14+ with AIDL PowerHAL)."
   fi
 
   rm -rf "$MODPATH/common"
